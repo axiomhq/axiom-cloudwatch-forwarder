@@ -52,11 +52,19 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 			cw["group_name"] = group
 		}
 
-		data, typ, err := acLambda.MatchMessage(logEvent.Message)
-		if err != nil && err != acLambda.ErrNotParsable {
-			logger.Error("%v", err)
+		var (
+			data map[string]interface{}
+			err  error
+		)
+		switch cw["service"] {
+		case "lambda":
+			data, cw["format"], err = acLambda.MatchMessage(logEvent.Message)
+			if err != nil && err != acLambda.ErrNotParsable {
+				logger.Error("%v", err)
+			}
+		default:
+			cw["format"] = "unknown"
 		}
-		cw["format"] = typ
 
 		ev := map[string]interface{}{}
 		for k, v := range data {
@@ -64,6 +72,7 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 				ev[k] = v
 			}
 		}
+
 		ev["cloudwatch"] = cw
 		ev["_time"] = logEvent.Timestamp
 		events = append(events, ev)
