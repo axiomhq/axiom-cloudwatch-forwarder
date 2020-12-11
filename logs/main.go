@@ -7,7 +7,9 @@ import (
 	"os"
 	"strings"
 
-	acLambda "axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/services/lambda"
+	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/service/eks"
+
+	acLambda "axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/service/lambda"
 	"axicode.axiom.co/watchmakers/axiomdb/client"
 	"axicode.axiom.co/watchmakers/axiomdb/core/common"
 	proxy "axicode.axiom.co/watchmakers/go-lambda-proxy"
@@ -52,32 +54,23 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 			cw["group_name"] = group
 		}
 
-		var (
-			data map[string]interface{}
-			err  error
-		)
+		var dict map[string]interface{}
 
 		switch cw["service"] {
 		case "lambda":
-			data, cw["format"] = acLambda.MatchMessage(logEvent.Message)
-			if err != nil && err != service.ErrNotParsable {
-				logger.Error("%v", err)
-			}
+			dict, cw["format"] = acLambda.MatchMessage(logEvent.Message)
 		case "eks":
-			data, cw["format"] = acLambda.MatchMessage(logEvent.Message)
-			if err != nil && err != service.ErrNotParsable {
-				logger.Error("%v", err)
-			}
+			dict, cw["format"] = eks.MatchMessage(data.LogStream, logEvent.Message)
 		default:
 			cw["format"] = "unknown"
 		}
 
-		if data["format"] != "json" && data["format"] != "unknown" && service != "" {
-			data[service] = data
+		if dict["format"] != "json" && dict["format"] != "unknown" && service != "" {
+			dict[service] = dict
 		}
 
 		ev := map[string]interface{}{}
-		for k, v := range data {
+		for k, v := range dict {
 			if !strings.HasPrefix(k, "cloudwatch.") && k != "cloudwatch" {
 				ev[k] = v
 			}
