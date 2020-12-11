@@ -1,4 +1,4 @@
-# axiom-cloudwatch-lambda
+# axiom-cloudwatch-ingestor
 
 ### Building:
 
