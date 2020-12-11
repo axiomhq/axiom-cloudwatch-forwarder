@@ -1,10 +1,11 @@
 package lambda
 
 import (
-	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser"
 )
 
 var (
@@ -57,31 +58,23 @@ func MatchMessage(msg string) (map[string]interface{}, string) {
 	switch {
 	case strings.HasPrefix(msg, "START"):
 		if dict, err = RegexpNamedGroupsMatch(rStart, msg); err != nil {
-			dict["raw_message"] = msg
-			return dict, "unknown"
+			return parser.NewRawMessage(msg)
 		}
 		dict["type"] = "start"
 	case strings.HasPrefix(msg, "END"):
 		if dict, err = RegexpNamedGroupsMatch(rEnd, msg); err != nil {
-			dict["raw_message"] = msg
-			return dict, "unknown"
+			return parser.NewRawMessage(msg)
 		}
 		dict["type"] = "end"
 	case strings.HasPrefix(msg, "REPORT"):
 		if dict, err = RegexpNamedGroupsMatch(rReport, msg); err != nil {
-			dict["raw_message"] = msg
-			return dict, "unknown"
+			return parser.NewRawMessage(msg)
 		}
-		if dict, err := cleanupReport(dict); err != nil {
-			dict["raw_message"] = msg
-			return dict, "unknown"
+		if dict, err = cleanupReport(dict); err != nil {
+			return parser.NewRawMessage(msg)
 		}
 	default:
-		if err := json.Unmarshal([]byte(msg), &dict); err != nil {
-			dict["raw_message"] = msg
-			return dict, "unknown"
-		}
-		return dict, "json"
+		return parser.MatchUnknownMessage(msg)
 	}
 	return dict, "lambda_info"
 }

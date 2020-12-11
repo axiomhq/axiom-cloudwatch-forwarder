@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/service/eks"
-
-	acLambda "axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/service/lambda"
+	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser"
+	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser/eks"
+	acLambda "axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser/lambda"
 	"axicode.axiom.co/watchmakers/axiomdb/client"
 	"axicode.axiom.co/watchmakers/axiomdb/core/common"
 	proxy "axicode.axiom.co/watchmakers/go-lambda-proxy"
@@ -42,19 +42,18 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 
 	for _, logEvent := range data.LogEvents {
 		cw := map[string]interface{}{
-			"id":      logEvent.ID,
-			"group":   data.LogGroup,
-			"stream":  data.LogStream,
-			"type":    data.MessageType,
-			"owner":   data.Owner,
-			"message": logEvent.Message,
+			"id":     logEvent.ID,
+			"group":  data.LogGroup,
+			"stream": data.LogStream,
+			"type":   data.MessageType,
+			"owner":  data.Owner,
 		}
 		if sgParsed {
 			cw["service"] = service
 			cw["group_name"] = group
 		}
 
-		var dict map[string]interface{}
+		dict := make(map[string]interface{})
 
 		switch cw["service"] {
 		case "lambda":
@@ -62,11 +61,13 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 		case "eks":
 			dict, cw["format"] = eks.MatchMessage(data.LogStream, logEvent.Message)
 		default:
-			cw["format"] = "unknown"
+			dict, cw["format"] = parser.MatchUnknownMessage(logEvent.Message)
 		}
 
-		if dict["format"] != "json" && dict["format"] != "unknown" && service != "" {
-			dict[service] = dict
+		if dict["format"] != "json" && service != "" {
+			dict = map[string]interface{}{
+				service: dict,
+			}
 		}
 
 		ev := map[string]interface{}{}
