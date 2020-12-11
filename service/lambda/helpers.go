@@ -2,14 +2,10 @@ package lambda
 
 import (
 	"encoding/json"
-	"errors"
 	"regexp"
 	"strconv"
 	"strings"
 )
-
-// ErrNotParsable ...
-var ErrNotParsable = errors.New("message not parsable")
 
 var (
 	// START RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
@@ -53,7 +49,7 @@ func cleanupReport(dict map[string]interface{}) (map[string]interface{}, error) 
 }
 
 // MatchMessage ...
-func MatchMessage(msg string) (map[string]interface{}, string, error) {
+func MatchMessage(msg string) (map[string]interface{}, string) {
 	var (
 		dict = make(map[string]interface{})
 		err  error
@@ -61,26 +57,33 @@ func MatchMessage(msg string) (map[string]interface{}, string, error) {
 	switch {
 	case strings.HasPrefix(msg, "START"):
 		if dict, err = RegexpNamedGroupsMatch(rStart, msg); err != nil {
-			return nil, "unknown", err
+			dict["raw_message"] = msg
+			return dict, "unknown"
 		}
 		dict["type"] = "start"
 	case strings.HasPrefix(msg, "END"):
 		if dict, err = RegexpNamedGroupsMatch(rEnd, msg); err != nil {
-			return nil, "unknown", err
+			dict["raw_message"] = msg
+			return dict, "unknown"
 		}
 		dict["type"] = "end"
 	case strings.HasPrefix(msg, "REPORT"):
 		if dict, err = RegexpNamedGroupsMatch(rReport, msg); err != nil {
-			return nil, "unknown", err
+			dict["raw_message"] = msg
+			return dict, "unknown"
 		}
-		dict, err = cleanupReport(dict)
+		if dict, err := cleanupReport(dict); err != nil {
+			dict["raw_message"] = msg
+			return dict, "unknown"
+		}
 	default:
 		if err := json.Unmarshal([]byte(msg), &dict); err != nil {
-			return nil, "unknown", ErrNotParsable
+			dict["raw_message"] = msg
+			return dict, "unknown"
 		}
-		return dict, "json", nil
+		return dict, "json"
 	}
-	return map[string]interface{}{"lambda": dict}, "lambda_info", err
+	return dict, "lambda_info"
 }
 
 // ParseServiceGroup ...

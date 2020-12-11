@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	acLambda "axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/lambda"
+	acLambda "axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/services/lambda"
 	"axicode.axiom.co/watchmakers/axiomdb/client"
 	"axicode.axiom.co/watchmakers/axiomdb/core/common"
 	proxy "axicode.axiom.co/watchmakers/go-lambda-proxy"
@@ -56,14 +56,24 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 			data map[string]interface{}
 			err  error
 		)
+
 		switch cw["service"] {
 		case "lambda":
-			data, cw["format"], err = acLambda.MatchMessage(logEvent.Message)
-			if err != nil && err != acLambda.ErrNotParsable {
+			data, cw["format"] = acLambda.MatchMessage(logEvent.Message)
+			if err != nil && err != service.ErrNotParsable {
+				logger.Error("%v", err)
+			}
+		case "eks":
+			data, cw["format"] = acLambda.MatchMessage(logEvent.Message)
+			if err != nil && err != service.ErrNotParsable {
 				logger.Error("%v", err)
 			}
 		default:
 			cw["format"] = "unknown"
+		}
+
+		if data["format"] != "json" && data["format"] != "unknown" && service != "" {
+			data[service] = data
 		}
 
 		ev := map[string]interface{}{}
