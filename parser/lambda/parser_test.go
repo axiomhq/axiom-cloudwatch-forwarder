@@ -10,6 +10,7 @@ type testRegexpMatch struct {
 	name     string
 	input    string
 	expected map[string]interface{}
+	format   string
 	err      error
 }
 
@@ -21,12 +22,18 @@ func TestMatchMessage(t *testing.T) {
 			expected: map[string]interface{}{
 				"request_id": "c891f2ff-e6ef-4a70-afaf-dea58196b73e",
 				"version":    "$LATEST",
+				"type":       "start",
 			},
+			format: "lambda_info",
 		},
 		{
-			name:     "end",
-			input:    "END RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46",
-			expected: map[string]interface{}{"request_id": "b3be449c-8bd7-11e7-bb30-4f271af95c46"},
+			name:  "end",
+			input: "END RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46",
+			expected: map[string]interface{}{
+				"request_id": "b3be449c-8bd7-11e7-bb30-4f271af95c46",
+				"type":       "end",
+			},
+			format: "lambda_info",
 		},
 		{
 			name: "report",
@@ -37,22 +44,21 @@ func TestMatchMessage(t *testing.T) {
 				"duration_billed_ms": 550,
 				"memory_size_max_mb": 44,
 				"memory_size_mb":     512,
+				"type":               "report",
 			},
+			format: "lambda_info",
 		},
 		{
 			name:     "misc",
 			input:    `{"hello": "world"}`,
 			expected: map[string]interface{}{"hello": "world"},
+			format:   "json",
 		},
 	}
 
 	for _, test := range tests {
-		dict, err := MatchMessage(test.input)
-		if test.err != nil {
-			require.Error(t, err)
-		} else {
-			require.NoError(t, err)
-		}
+		dict, format := MatchMessage(test.input)
+		require.Equal(t, test.format, format)
 		require.Equal(t, test.expected, dict, test.name)
 	}
 }
