@@ -7,7 +7,7 @@ Bugs, feature requests, and development-related questions should be directed to 
 
  If reporting a bug, please try and provide as much context as possible such as your operating system, Go version, and anything else that might be relevant to the bug. For feature requests, please explain what you're trying to do, and how the requested feature would help you do that.
 
- Security related bugs can either be reported in the issue tracker, or if they are more sensitive, emailed to [](). 
+ Security related bugs can either be reported in the issue tracker, or if they are more sensitive, emailed to support@axiom.com 
 
  ## Setup
 
