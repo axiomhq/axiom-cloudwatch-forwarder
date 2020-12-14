@@ -1,5 +1,8 @@
 # axiom-cloudwatch-ingestor
 
+## Table of Contents
+- 
+
 ### Building:
 
 1. go mod vendor
