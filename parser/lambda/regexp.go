@@ -9,7 +9,7 @@ import (
 // golang will give you an array of values that matches your submatch
 // but not a map, you have to manually correlate it over to a map
 func RegexpNamedGroupsMatch(pattern *regexp.Regexp, search string) (map[string]interface{}, error) {
-	if pattern.MatchString(search) == false {
+	if !pattern.MatchString(search) {
 		return nil, fmt.Errorf("Could not match string %s", search)
 	}
 	namedGroupMatch := make(map[string]interface{})

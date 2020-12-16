@@ -3,7 +3,7 @@ package eks
 import (
 	"strings"
 
-	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser"
+	"github.com/axiomhq/axiom-cloudwatch-lambda/parser"
 )
 
 // MatchMessage ...

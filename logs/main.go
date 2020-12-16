@@ -3,29 +3,23 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
-	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser"
-	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser/eks"
-	acLambda "axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser/lambda"
-	"axicode.axiom.co/watchmakers/axiomdb/client"
-	"axicode.axiom.co/watchmakers/axiomdb/core/common"
-	proxy "axicode.axiom.co/watchmakers/go-lambda-proxy"
+	// TODO(lukasmalkmus): Make sure we open-source them or make them part of
+	// this project.
 	"axicode.axiom.co/watchmakers/logmanager"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
+	"github.com/axiomhq/axiom-cloudwatch-lambda/parser"
+	"github.com/axiomhq/axiom-cloudwatch-lambda/parser/eks"
+	lambdaParser "github.com/axiomhq/axiom-cloudwatch-lambda/parser/lambda"
+	"github.com/axiomhq/axiom-go/axiom"
 )
 
-var (
-	logger = logmanager.GetLogger("axiom.cloudwatch.aws-lambda")
-	once   = &common.OnceErr{}
-
-	// adapter is created on cold-start and re-used afterwards.
-	adapter *proxy.Adapter
-)
+var logger = logmanager.GetLogger("axiom.cloudwatch.aws-lambda")
 
 func main() {
 	lambda.Start(handler)
@@ -37,8 +31,8 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 		return
 	}
 
-	events := make([]map[string]interface{}, 0, len(data.LogEvents))
-	service, group, sgParsed := acLambda.ParseServiceGroup(data.LogGroup)
+	events := make([]axiom.Event, 0, len(data.LogEvents))
+	service, group, sgParsed := lambdaParser.ParseServiceGroup(data.LogGroup)
 
 	for _, logEvent := range data.LogEvents {
 		cw := map[string]interface{}{
@@ -53,11 +47,10 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 			cw["group_name"] = group
 		}
 
-		dict := make(map[string]interface{})
-
+		var dict map[string]interface{}
 		switch cw["service"] {
 		case "lambda":
-			dict, cw["format"] = acLambda.MatchMessage(logEvent.Message)
+			dict, cw["format"] = lambdaParser.MatchMessage(logEvent.Message)
 		case "eks":
 			dict, cw["format"] = eks.MatchMessage(data.LogStream, logEvent.Message)
 		default:
@@ -70,7 +63,7 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 			}
 		}
 
-		ev := map[string]interface{}{}
+		ev := axiom.Event{}
 		for k, v := range dict {
 			if !strings.HasPrefix(k, "cloudwatch.") && k != "cloudwatch" {
 				ev[k] = v
@@ -79,49 +72,34 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 
 		ev["cloudwatch"] = cw
 		ev["_time"] = logEvent.Timestamp
+
 		events = append(events, ev)
 	}
 
 	if err := sendEvents(ctx, events); err != nil {
-		logger.Error("%v", err)
+		_ = logger.Error("failed to send events: %s", err)
 		os.Exit(-1)
 	}
-
-	return
 }
 
-func sendEvents(ctx context.Context, events []map[string]interface{}) error {
+func sendEvents(ctx context.Context, events []axiom.Event) error {
 	var (
 		url     = os.Getenv("AXIOM_URL")
 		authkey = os.Getenv("AXIOM_AUTHKEY")
 		dataset = os.Getenv("AXIOM_DATASET")
 	)
 
-	axiClient, err := client.NewClient(url)
+	client, err := axiom.NewClient(url, authkey)
 	if err != nil {
 		return err
 	}
 
-	req, err := axiClient.Datasets.NewIngestEventsRequest(ctx, dataset, client.IngestOptions{}, events...)
+	res, err := client.Datasets.IngestEvents(ctx, dataset, axiom.IngestOptions{}, events...)
 	if err != nil {
 		return err
 	}
 
-	if authkey != "" {
-		req.Header.Set("Authorization", "Bearer "+authkey)
-	}
+	logger.Info(fmt.Sprintf("ingested %d of %d events into %q", res.Ingested, res.Failed, dataset))
 
-	resp, err := axiClient.Do(req)
-	if err != nil {
-		logger.Error("error sending request: %s", err)
-		return err
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	logger.Info(fmt.Sprintf("\ndataset %v:\n%s\n%s", dataset, resp.Status, string(body)))
 	return nil
 }

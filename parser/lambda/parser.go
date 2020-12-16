@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda/parser"
+	"github.com/axiomhq/axiom-cloudwatch-lambda/parser"
 )
 
 var (
@@ -52,7 +52,7 @@ func cleanupReport(dict map[string]interface{}) (map[string]interface{}, error) 
 // MatchMessage ...
 func MatchMessage(msg string) (map[string]interface{}, string) {
 	var (
-		dict = make(map[string]interface{})
+		dict map[string]interface{}
 		err  error
 	)
 	switch {

@@ -11,7 +11,6 @@ type testRegexpMatch struct {
 	input    string
 	expected map[string]interface{}
 	format   string
-	err      error
 }
 
 func TestMatchMessage(t *testing.T) {

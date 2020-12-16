@@ -1,12 +1,11 @@
-module axicode.axiom.co/watchmakers/axiom-cloudwatch-lambda
+module github.com/axiomhq/axiom-cloudwatch-lambda
 
 go 1.15
 
 require (
-	axicode.axiom.co/watchmakers/axiomdb v1.3.0-beta.1.0.20201209171547-bc85be56dbfd
-	axicode.axiom.co/watchmakers/go-lambda-proxy v1.1.0
 	axicode.axiom.co/watchmakers/logmanager v1.0.4
 	github.com/aws/aws-lambda-go v1.20.0
+	github.com/axiomhq/axiom-go v0.0.0-20201215212509-678033418d51
 	github.com/stretchr/testify v1.6.1
 )
 
