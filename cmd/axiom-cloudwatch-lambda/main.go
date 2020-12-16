@@ -3,39 +3,54 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
-	// TODO(lukasmalkmus): Make sure we open-source them or make them part of
-	// this project.
-	"axicode.axiom.co/watchmakers/logmanager"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/axiomhq/axiom-go/axiom"
 
 	"github.com/axiomhq/axiom-cloudwatch-lambda/parser"
 	"github.com/axiomhq/axiom-cloudwatch-lambda/parser/eks"
 	lambdaParser "github.com/axiomhq/axiom-cloudwatch-lambda/parser/lambda"
-	"github.com/axiomhq/axiom-go/axiom"
+	"github.com/axiomhq/axiom-cloudwatch-lambda/version"
 )
 
-var logger = logmanager.GetLogger("axiom.cloudwatch.aws-lambda")
+var (
+	deploymentURL = os.Getenv("AXIOM_DEPLOYMENT_URL")
+	accessToken   = os.Getenv("AXIOM_ACCESS_TOKEN")
+	dataset       = os.Getenv("AXIOM_DATASET")
+)
 
 func main() {
+	log.Print("starting axiom-cloudwatch-lambda version", version.Release())
+
+	if deploymentURL == "" {
+		log.Fatal("missing AXIOM_DEPLOYMENT_URL")
+	}
+	if accessToken == "" {
+		log.Fatal("missing AXIOM_ACCESS_TOKEN")
+	}
+	if dataset == "" {
+		log.Fatal("missing AXIOM_DATASET")
+	}
+
 	lambda.Start(handler)
 }
 
-func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
+func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) error {
 	data, _ := logsEvent.AWSLogs.Parse()
 	if len(data.LogEvents) == 0 {
-		return
+		return nil
 	}
 
 	events := make([]axiom.Event, 0, len(data.LogEvents))
+
 	service, group, sgParsed := lambdaParser.ParseServiceGroup(data.LogGroup)
 
 	for _, logEvent := range data.LogEvents {
-		cw := map[string]interface{}{
+		cw := map[string]string{
 			"id":     logEvent.ID,
 			"group":  data.LogGroup,
 			"stream": data.LogStream,
@@ -57,7 +72,7 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 			dict, cw["format"] = parser.MatchUnknownMessage(logEvent.Message)
 		}
 
-		if dict["format"] != "json" && service != "" {
+		if dict["format"] != parser.FormatJSON && service != "" {
 			dict = map[string]interface{}{
 				service: dict,
 			}
@@ -71,25 +86,20 @@ func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) {
 		}
 
 		ev["cloudwatch"] = cw
-		ev["_time"] = logEvent.Timestamp
+		ev[axiom.TimestampField] = logEvent.Timestamp
 
 		events = append(events, ev)
 	}
 
 	if err := sendEvents(ctx, events); err != nil {
-		_ = logger.Error("failed to send events: %s", err)
-		os.Exit(-1)
+		return fmt.Errorf("failed to send events: %w", err)
 	}
+
+	return nil
 }
 
 func sendEvents(ctx context.Context, events []axiom.Event) error {
-	var (
-		url     = os.Getenv("AXIOM_URL")
-		authkey = os.Getenv("AXIOM_AUTHKEY")
-		dataset = os.Getenv("AXIOM_DATASET")
-	)
-
-	client, err := axiom.NewClient(url, authkey)
+	client, err := axiom.NewClient(deploymentURL, accessToken)
 	if err != nil {
 		return err
 	}
@@ -99,7 +109,7 @@ func sendEvents(ctx context.Context, events []axiom.Event) error {
 		return err
 	}
 
-	logger.Info(fmt.Sprintf("ingested %d of %d events into %q", res.Ingested, res.Failed, dataset))
+	log.Printf("ingested %d of %d events into %q", res.Ingested, res.Failed, dataset)
 
 	return nil
 }
