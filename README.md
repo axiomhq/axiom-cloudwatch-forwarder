@@ -1,21 +1,84 @@
-# axiom-cloudwatch-ingestor
+# Axiom Cloudwatch Lambda
+
+[![Go Workflow][go_workflow_badge]][go_workflow]
+[![Coverage Status][coverage_badge]][coverage]
+[![Go Report][report_badge]][report]
+[![Latest Release][release_badge]][release]
+[![License][license_badge]][license]
+
+---
 
 ## Table of Contents
-- 
 
-### Building:
+1. [Introduction](#introduction)
+1. [Usage](#usage)
+1. [Contributing](#contributing)
+1. [License](#license)
 
-1. go mod vendor
-2. docker run -v $(PWD):/app -it golang bash
-3. cd app/<sub-dir>
-4. go build -o <name>
-5. zip <name.zip> <name>
+## Introduction
 
-### Deployment:
+_Axiom Cloudwatch Lambda_ ships logs to Axiom, right within from a lambda
+function.
 
-Upload zip and set the following env varialbes:
+Currently, **Axiom Go requires Go 1.12 or greater**.
+
+## Installation
+
+### Download the pre-compiled and archived binary manually
+
+Binary releases are evailable on [GitHub Releases][2].
+
+  [2]: https://github.com/axiomhq/axiom-cloudwatch-lambda/releases/latest
+
+### Install from source
+
+This project uses native [go mod][3] support.
+
+```shell
+$ git clone https://github.com/axiomhq/axiom-cloudwatch-lambda.git
+$ cd axiom-cloudwatch-lambda
+$ make build # Puts archive into ./dist/
 ```
-AXIOM_AUTHKEY:	<axiom-auth-key>
-AXIOM_DATASET:	<dataset-name>
-AXIOM_URL: <axiom-url>
-```
+
+  [3]: https://golang.org/cmd/go/#hdr-Module_maintenance
+
+## Usage
+
+1. Upload the archive
+2. Set the following environment variables on the lambda:
+   - `AXIOM_DEPLOYMENT_URL`: URL of the Axiom deployment to use
+   - `AXIOM_ACCESS_TOKEN`: **Personal Access** or **Ingest** token. Can be
+     created under `Profile` or `Settings > Ingest Tokens`. For security reasons
+     it is advised to use an Ingest Token with minimal privileges only.
+   - `AXIOM_DATASET`: Dataset to ship the logs to
+
+## Contributing
+
+Feel free to submit PRs or to fill issues. Every kind of help is appreciated.
+
+Before committing, `make` should run without any issues.
+
+## License
+
+&copy; Axiom, Inc., 2020
+
+Distributed under MIT License (`The MIT License`).
+
+See [LICENSE](LICENSE) for more information.
+
+[![License Status][license_status_badge]][license_status]
+
+<!-- Badges -->
+
+[go_workflow]: https://github.com/axiomhq/axiom-cloudwatch-lambda/actions?query=workflow%3Ago
+[go_workflow_badge]: https://img.shields.io/github/workflow/status/axiomhq/axiom-cloudwatch-lambda/go?style=flat-square&dummy=unused
+[coverage]: https://codecov.io/gh/axiomhq/axiom-cloudwatch-lambda
+[coverage_badge]: https://img.shields.io/codecov/c/github/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&dummy=unused
+[report]: https://goreportcard.com/report/github.com/axiomhq/axiom-cloudwatch-lambda
+[report_badge]: https://goreportcard.com/badge/github.com/axiomhq/axiom-cloudwatch-lambda?style=flat-square&dummy=unused
+[release]: https://github.com/axiomhq/axiom-cloudwatch-lambda/releases/latest
+[release_badge]: https://img.shields.io/github/release/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&dummy=unused
+[license]: https://opensource.org/licenses/MIT
+[license_badge]: https://img.shields.io/github/license/axiomhq/axiom-cloudwatch-lambda.svg?color=blue&style=flat-square&dummy=unused
+[license_status]: https://app.fossa.com/projects/git%2Bgithub.com%2Faxiomhq%2Faxiom-cloudwatch-lambda
+[license_status_badge]: https://app.fossa.com/api/projects/git%2Bgithub.com%2Faxiomhq%2Faxiom-cloudwatch-lambda.svg?type=large&dummy=unused

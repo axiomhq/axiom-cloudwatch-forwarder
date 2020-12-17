@@ -13,9 +13,6 @@ var (
 	// Version: $LATEST
 	rStart = regexp.MustCompile(`START RequestId:\s+(?P<request_id>\S+)\s+Version: (?P<version>\S+)`)
 
-	// Standard out from Lambdas.
-	rStd = regexp.MustCompile(`\d\d\d\d-\d\d-\d\d\S+\s+(?P<request_id>\S+)`)
-
 	// END RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
 	rEnd = regexp.MustCompile(`END RequestId:\s+(?P<request_id>\S+)`)
 
