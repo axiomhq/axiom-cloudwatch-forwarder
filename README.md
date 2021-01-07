@@ -20,19 +20,17 @@
 _Axiom Cloudwatch Lambda_ ships logs to Axiom, right within from a lambda
 function.
 
-Currently, **Axiom Go requires Go 1.12 or greater**.
-
 ## Installation
 
 ### Download the pre-compiled and archived binary manually
 
-Binary releases are evailable on [GitHub Releases][2].
+Binary releases are available on [GitHub Releases][1].
 
-  [2]: https://github.com/axiomhq/axiom-cloudwatch-lambda/releases/latest
+  [1]: https://github.com/axiomhq/axiom-cloudwatch-lambda/releases/latest
 
 ### Install from source
 
-This project uses native [go mod][3] support.
+This project uses native [go mod][2] support.
 
 ```shell
 $ git clone https://github.com/axiomhq/axiom-cloudwatch-lambda.git
@@ -40,17 +38,17 @@ $ cd axiom-cloudwatch-lambda
 $ make build # Puts archive into ./dist/
 ```
 
-  [3]: https://golang.org/cmd/go/#hdr-Module_maintenance
+  [2]: https://golang.org/cmd/go/#hdr-Module_maintenance
 
 ## Usage
 
 1. Upload the archive
 2. Set the following environment variables on the lambda:
-   - `AXIOM_DEPLOYMENT_URL`: URL of the Axiom deployment to use
-   - `AXIOM_ACCESS_TOKEN`: **Personal Access** or **Ingest** token. Can be
+   * `AXIOM_DEPLOYMENT_URL`: URL of the Axiom deployment to use
+   * `AXIOM_ACCESS_TOKEN`: **Personal Access** or **Ingest** token. Can be
      created under `Profile` or `Settings > Ingest Tokens`. For security reasons
      it is advised to use an Ingest Token with minimal privileges only.
-   - `AXIOM_DATASET`: Dataset to ship the logs to
+   * `AXIOM_DATASET`: Dataset to ship the logs to
 
 ## Contributing
 
@@ -60,7 +58,7 @@ Before committing, `make` should run without any issues.
 
 ## License
 
-&copy; Axiom, Inc., 2020
+&copy; Axiom, Inc., 2021
 
 Distributed under MIT License (`The MIT License`).
 

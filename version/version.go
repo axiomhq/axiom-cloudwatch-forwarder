@@ -2,7 +2,7 @@
 // build information about the application referencing this package. At compile
 // time the appropriate linker flags must be passed:
 //
-// 	go build -ldflags "-X github.com/axiomhq/cli/pkg/version.release=1.0.0"
+// 	go build -ldflags "-X github.com/axiomhq/axiom-cloudwatch-lambda/version.release=1.0.0"
 //
 // Adapt the flags for all other exported variables. Eventually use vendored
 // version.

@@ -17,9 +17,9 @@ builds:
       - -tags="osusergo netgo static_build"
     ldflags:
       - -s -w -extldflags "-fno-PIC -static"
-      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.release={{.Version}}
-      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.revision={{.ShortCommit}}
-      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.buildDate={{.CommitDate}}
+      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.release={{ .Version }}
+      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.revision={{ .ShortCommit }}
+      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.buildDate={{ .CommitDate }}
       - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.buildUser=goreleaser
     mod_timestamp: "{{ .CommitTimestamp }}"
 
@@ -27,7 +27,7 @@ archives:
   - id: axiom-cloudwatch-lambda
     builds:
       - axiom-cloudwatch-lambda
-    name_template: "{{ .ProjectName }}_{{ .Version }}{{ end }}"
+    name_template: "{{ .ProjectName }}_{{ .Version }}"
     wrap_in_directory: true
     format: tar.gz
     files:
@@ -35,7 +35,7 @@ archives:
       - README.md
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: checksums.txt
 
 snapshot:
   name_template: "{{ .Tag }}-next"
@@ -59,4 +59,4 @@ release:
     owner: axiomhq
     name: axiom-cloudwatch-lambda
   prerelease: auto
-  name_template: "Axiom Cloudwatch Lambda v{{.Version}}"
+  name_template: "Axiom Cloudwatch Lambda v{{ .Version }}"
