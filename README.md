@@ -64,8 +64,6 @@ Distributed under MIT License (`The MIT License`).
 
 See [LICENSE](LICENSE) for more information.
 
-[![License Status][license_status_badge]][license_status]
-
 <!-- Badges -->
 
 [go_workflow]: https://github.com/axiomhq/axiom-cloudwatch-lambda/actions?query=workflow%3Ago
@@ -78,5 +76,3 @@ See [LICENSE](LICENSE) for more information.
 [release_badge]: https://img.shields.io/github/release/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&dummy=unused
 [license]: https://opensource.org/licenses/MIT
 [license_badge]: https://img.shields.io/github/license/axiomhq/axiom-cloudwatch-lambda.svg?color=blue&style=flat-square&dummy=unused
-[license_status]: https://app.fossa.com/projects/git%2Bgithub.com%2Faxiomhq%2Faxiom-cloudwatch-lambda
-[license_status_badge]: https://app.fossa.com/api/projects/git%2Bgithub.com%2Faxiomhq%2Faxiom-cloudwatch-lambda.svg?type=large&dummy=unused
