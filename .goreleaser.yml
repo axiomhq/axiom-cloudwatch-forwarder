@@ -11,16 +11,16 @@ builds:
     env:
       - CGO_ENABLED=0
     flags:
-      - -buildmode=exe
+      - -buildmode=pie
       - -installsuffix=cgo
       - -trimpath
       - -tags="osusergo netgo static_build"
     ldflags:
-      - -s -w -extldflags "-fno-PIC -static"
-      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.release={{ .Version }}
-      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.revision={{ .ShortCommit }}
-      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.buildDate={{ .CommitDate }}
-      - -X github.com/axiomhq/axiom-cloudwatch-lambda/version.buildUser=goreleaser
+      - -s -w -extldflags "-fno-PIC -static -Wl -z now -z relro"
+      - -X github.com/axiomhq/pkg/version.release={{ .Version }}
+      - -X github.com/axiomhq/pkg/version.revision={{ .ShortCommit }}
+      - -X github.com/axiomhq/pkg/version.buildDate={{ .CommitDate }}
+      - -X github.com/axiomhq/pkg/version.buildUser=goreleaser
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:

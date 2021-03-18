@@ -10,11 +10,11 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/axiomhq/axiom-go/axiom"
+	"github.com/axiomhq/pkg/version"
 
 	"github.com/axiomhq/axiom-cloudwatch-lambda/parser"
 	"github.com/axiomhq/axiom-cloudwatch-lambda/parser/eks"
 	lambdaParser "github.com/axiomhq/axiom-cloudwatch-lambda/parser/lambda"
-	"github.com/axiomhq/axiom-cloudwatch-lambda/version"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	log.Print("starting axiom-cloudwatch-lambda version", version.Release())
+	log.Print("starting axiom-cloudwatch-lambda version ", version.Release())
 
 	if deploymentURL == "" {
 		log.Fatal("missing AXIOM_DEPLOYMENT_URL")

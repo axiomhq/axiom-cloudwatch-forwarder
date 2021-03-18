@@ -11,26 +11,6 @@ on:
       - main
 
 jobs:
-  check:
-    name: Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: "1.15"
-
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -41,7 +21,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: "1.15"
+          go-version: "1.16"
 
       # The golangci-lint action takes care of caching by itself.
       - name: Lint
@@ -57,7 +37,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: "1.15"
+          go-version: "1.16"
 
       - name: Cache dependencies
         uses: actions/cache@v2
@@ -72,7 +52,9 @@ jobs:
 
       - uses: codecov/codecov-action@v1
         with:
-          fail_ci_if_error: true
+          # TODO(lukasmalkmus): Set to 'true' when going open-source.
+          # fail_ci_if_error: true
+          fail_ci_if_error: false
 
   build:
     name: Build
@@ -84,7 +66,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: "1.15"
+          go-version: "1.16"
 
       - name: Cache dependencies
         uses: actions/cache@v2
@@ -100,7 +82,6 @@ jobs:
   release:
     name: Release
     needs:
-      - check
       - lint
       - test
       - build
@@ -113,7 +94,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: "1.15"
+          go-version: "1.16"
 
       - name: Cache dependencies
         uses: actions/cache@v2
