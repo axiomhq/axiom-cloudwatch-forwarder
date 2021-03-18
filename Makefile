@@ -6,7 +6,6 @@ GOFMT			:= $(GO)fmt
 # ENVIRONMENT
 VERBOSE		=
 GOPATH		:= $(GOPATH)
-MOD_NAME	:= github.com/axiomhq/axiom-cloudwatch-lambda
 
 # APPLICATION INFORMATION
 BUILD_DATE      := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
@@ -27,12 +26,12 @@ DIST_DIR		:= dist
 GOTAGS := osusergo netgo static_build
 
 # FLAGS
-GOFLAGS := -buildmode=exe -tags='$(GOTAGS)' -installsuffix=cgo -trimpath
-GOFLAGS += -ldflags='-s -w -extldflags "-fno-PIC -static"
-GOFLAGS += -X $(MOD_NAME)/version.release=$(RELEASE)
-GOFLAGS += -X $(MOD_NAME)/version.revision=$(REVISION)
-GOFLAGS += -X $(MOD_NAME)/version.buildDate=$(BUILD_DATE)
-GOFLAGS += -X $(MOD_NAME)/version.buildUser=$(USER)'
+GOFLAGS := -buildmode=pie -tags='$(GOTAGS)' -installsuffix=cgo -trimpath
+GOFLAGS += -ldflags='-s -w -extldflags "-fno-PIC -static -Wl -z now -z relro"
+GOFLAGS += -X github.com/axiomhq/pkg/version.release=$(RELEASE)
+GOFLAGS += -X github.com/axiomhq/pkg/version.revision=$(REVISION)
+GOFLAGS += -X github.com/axiomhq/pkg/version.buildDate=$(BUILD_DATE)
+GOFLAGS += -X github.com/axiomhq/pkg/version.buildUser=$(USER)'
 
 GO_TEST_FLAGS		:= -race -coverprofile=$(COVERPROFILE)
 GORELEASER_FLAGS	:= --snapshot --rm-dist
