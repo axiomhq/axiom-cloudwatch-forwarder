@@ -56,6 +56,9 @@ jobs:
           # fail_ci_if_error: true
           fail_ci_if_error: false
 
+      - name: Update GoReport Card
+        uses: creekorful/goreportcard-action@v1.0
+
   build:
     name: Build
     runs-on: ubuntu-latest
