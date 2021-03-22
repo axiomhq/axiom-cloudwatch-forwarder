@@ -63,12 +63,12 @@ See [LICENSE](LICENSE) for more information.
 <!-- Badges -->
 
 [go_workflow]: https://github.com/axiomhq/axiom-cloudwatch-lambda/actions?query=workflow%3Ago
-[go_workflow_badge]: https://img.shields.io/github/workflow/status/axiomhq/axiom-cloudwatch-lambda/go?style=flat-square&dummy=unused
+[go_workflow_badge]: https://img.shields.io/github/workflow/status/axiomhq/axiom-cloudwatch-lambda/go?style=flat-square&ghcache=unused
 [coverage]: https://codecov.io/gh/axiomhq/axiom-cloudwatch-lambda
-[coverage_badge]: https://img.shields.io/codecov/c/github/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&dummy=unused
+[coverage_badge]: https://img.shields.io/codecov/c/github/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&ghcache=unused
 [report]: https://goreportcard.com/report/github.com/axiomhq/axiom-cloudwatch-lambda
-[report_badge]: https://goreportcard.com/badge/github.com/axiomhq/axiom-cloudwatch-lambda?style=flat-square&dummy=unused
+[report_badge]: https://goreportcard.com/badge/github.com/axiomhq/axiom-cloudwatch-lambda?style=flat-square&ghcache=unused
 [release]: https://github.com/axiomhq/axiom-cloudwatch-lambda/releases/latest
-[release_badge]: https://img.shields.io/github/release/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&dummy=unused
+[release_badge]: https://img.shields.io/github/release/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&ghcache=unused
 [license]: https://opensource.org/licenses/MIT
-[license_badge]: https://img.shields.io/github/license/axiomhq/axiom-cloudwatch-lambda.svg?color=blue&style=flat-square&dummy=unused
+[license_badge]: https://img.shields.io/github/license/axiomhq/axiom-cloudwatch-lambda.svg?color=blue&style=flat-square&ghcache=unused
