@@ -30,15 +30,11 @@ Binary releases are available on [GitHub Releases][1].
 
 ### Install from source
 
-This project uses native [go mod][2] support.
-
 ```shell
 $ git clone https://github.com/axiomhq/axiom-cloudwatch-lambda.git
 $ cd axiom-cloudwatch-lambda
-$ make build # Puts archive into ./dist/
+$ make build
 ```
-
-  [2]: https://golang.org/cmd/go/#hdr-Module_maintenance
 
 ## Usage
 
