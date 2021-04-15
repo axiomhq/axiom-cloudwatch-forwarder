@@ -33,7 +33,7 @@ Binary releases are available on [GitHub Releases][1].
 ```shell
 $ git clone https://github.com/axiomhq/axiom-cloudwatch-lambda.git
 $ cd axiom-cloudwatch-lambda
-$ make build
+$ make install
 ```
 
 ## Usage
