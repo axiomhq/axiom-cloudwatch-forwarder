@@ -31,9 +31,9 @@ Binary releases are available on [GitHub Releases][1].
 ### Install from source
 
 ```shell
-$ git clone https://github.com/axiomhq/axiom-cloudwatch-lambda.git
-$ cd axiom-cloudwatch-lambda
-$ make install
+ git clone https://github.com/axiomhq/axiom-cloudwatch-lambda.git
+ cd axiom-cloudwatch-lambda
+ make install
 ```
 
 ## Usage
