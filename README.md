@@ -62,8 +62,8 @@ See [LICENSE](LICENSE) for more information.
 
 <!-- Badges -->
 
-[go_workflow]: https://github.com/axiomhq/axiom-cloudwatch-lambda/actions?query=workflow%3Ago
-[go_workflow_badge]: https://img.shields.io/github/workflow/status/axiomhq/axiom-cloudwatch-lambda/go?style=flat-square&ghcache=unused
+[go_workflow]: https://github.com/axiomhq/axiom-cloudwatch-lambda/actions/workflows/push.yml
+[go_workflow_badge]: https://img.shields.io/github/workflow/status/axiomhq/axiom-cloudwatch-lambda/push?style=flat-square&ghcache=unused
 [coverage]: https://codecov.io/gh/axiomhq/axiom-cloudwatch-lambda
 [coverage_badge]: https://img.shields.io/codecov/c/github/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&ghcache=unused
 [report]: https://goreportcard.com/report/github.com/axiomhq/axiom-cloudwatch-lambda
