@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	deploymentURL = os.Getenv("AXIOM_DEPLOYMENT_URL")
-	accessToken   = os.Getenv("AXIOM_ACCESS_TOKEN")
+	deploymentURL = os.Getenv("AXIOM_URL")
+	accessToken   = os.Getenv("AXIOM_TOKEN")
 	dataset       = os.Getenv("AXIOM_DATASET")
 )
 
@@ -27,10 +27,10 @@ func main() {
 	log.Print("starting axiom-cloudwatch-lambda version ", version.Release())
 
 	if deploymentURL == "" {
-		log.Fatal("missing AXIOM_DEPLOYMENT_URL")
+		log.Fatal("missing AXIOM_URL")
 	}
 	if accessToken == "" {
-		log.Fatal("missing AXIOM_ACCESS_TOKEN")
+		log.Fatal("missing AXIOM_TOKEN")
 	}
 	if dataset == "" {
 		log.Fatal("missing AXIOM_DATASET")
