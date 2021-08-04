@@ -40,8 +40,8 @@ make install
 
 1. Upload the archive
 2. Set the following environment variables on the lambda:
-   * `AXIOM_DEPLOYMENT_URL`: URL of the Axiom deployment to use
-   * `AXIOM_ACCESS_TOKEN`: **Personal Access** or **Ingest** token. Can be
+   * `AXIOM_URL`: URL of the Axiom deployment to use
+   * `AXIOM_TOKEN`: **Personal Access** or **Ingest** token. Can be
      created under `Profile` or `Settings > Ingest Tokens`. For security reasons
      it is advised to use an Ingest Token with minimal privileges only.
    * `AXIOM_DATASET`: Dataset to ship the logs to
