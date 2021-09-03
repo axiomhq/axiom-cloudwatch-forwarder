@@ -1,26 +1,28 @@
 # TOOLCHAIN
-GO				:= CGO_ENABLED=0 GOBIN=$(CURDIR)/bin go
-GO_BIN_IN_PATH  := CGO_ENABLED=0 go
-GOFMT			:= $(GO)fmt
+GO			   := CGO_ENABLED=0 GOBIN=$(CURDIR)/bin go
+GO_BIN_IN_PATH := CGO_ENABLED=0 go
+GOFMT		   := $(GO)fmt
 
 # ENVIRONMENT
-VERBOSE		=
-GOPATH		:= $(GOPATH)
+VERBOSE =
+GOPATH	:= $(GOPATH)
 
 # APPLICATION INFORMATION
-BUILD_DATE      := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
-REVISION        := $(shell git rev-parse --short HEAD)
-RELEASE         := $(shell git describe --tags 2>/dev/null || git rev-parse --short HEAD)-dev
-USER            := $(shell whoami)
+BUILD_DATE := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
+REVISION   := $(shell git rev-parse --short HEAD)
+RELEASE	   := $(shell git describe --tags 2>/dev/null || git rev-parse --short HEAD)-dev
+USER	   := $(shell whoami)
 
 # GO TOOLS
-GOLANGCI_LINT	:= bin/golangci-lint
-GORELEASER		:= bin/goreleaser
-GOTESTSUM		:= bin/gotestsum
+GOLANGCI_LINT := bin/golangci-lint
+GORELEASER	  := bin/goreleaser
+GOTESTSUM	  := bin/gotestsum
+
+GOTOOLS := $(shell cat tools.go | grep "_ \"" | awk '{ print $$2 }' | tr -d '"')
 
 # MISC
-COVERPROFILE	:= coverage.out
-DIST_DIR		:= dist
+COVERPROFILE := coverage.out
+DIST_DIR	 := dist
 
 # TAGS
 GOTAGS := osusergo netgo static_build
@@ -33,14 +35,14 @@ GOFLAGS += -X github.com/axiomhq/pkg/version.revision=$(REVISION)
 GOFLAGS += -X github.com/axiomhq/pkg/version.buildDate=$(BUILD_DATE)
 GOFLAGS += -X github.com/axiomhq/pkg/version.buildUser=$(USER)'
 
-GO_TEST_FLAGS		:= -race -coverprofile=$(COVERPROFILE)
-GORELEASER_FLAGS	:= --snapshot --rm-dist
+GO_TEST_FLAGS	 := -race -coverprofile=$(COVERPROFILE)
+GORELEASER_FLAGS := --snapshot --rm-dist
 
 # DEPENDENCIES
 GOMODDEPS = go.mod go.sum
 
 # Enable verbose test output if explicitly set.
-GOTESTSUM_FLAGS	=
+GOTESTSUM_FLAGS =
 ifdef VERBOSE
 	GOTESTSUM_FLAGS += --format=standard-verbose
 endif
@@ -64,10 +66,10 @@ clean: ## Remove build and test artifacts
 	@echo ">> cleaning up artifacts"
 	@rm -rf bin $(DIST_DIR) $(COVERPROFILE) dep.stamp
 
-.PHONY: cover
-cover: $(COVERPROFILE) ## Calculate the code coverage score
+.PHONY: coverage
+coverage: $(COVERPROFILE) ## Calculate the code coverage score
 	@echo ">> calculating code coverage"
-	@$(GO) tool cover -func=$(COVERPROFILE) | tail -n1
+	@$(GO) tool cover -func=$(COVERPROFILE) | grep total | awk '{print $$3}'
 
 .PHONY: dep-clean
 dep-clean: ## Remove obsolete dependencies
@@ -79,6 +81,9 @@ dep-upgrade: ## Upgrade all direct dependencies to their latest version
 	@echo ">> upgrading dependencies"
 	@$(GO) get -d $(shell $(GO) list -f '{{if not (or .Main .Indirect)}}{{.Path}}{{end}}' -m all)
 	@make dep
+
+.PHONY: dep-upgrade-tools
+dep-upgrade-tools: $(GOTOOLS) ## Upgrade all tool dependencies to their latest version and install them
 
 .PHONY: dep
 dep: dep-clean dep.stamp ## Install and verify dependencies and remove obsolete ones
@@ -138,3 +143,8 @@ $(GORELEASER): dep.stamp $(call go-pkg-sourcefiles, github.com/goreleaser/gorele
 $(GOTESTSUM): dep.stamp $(call go-pkg-sourcefiles, gotest.tools/gotestsum)
 	@echo ">> installing gotestsum"
 	@$(GO) install gotest.tools/gotestsum
+
+$(GOTOOLS): dep.stamp $(call go-pkg-sourcefiles, $@)
+	@echo ">> installing $@"
+	@$(GO) get -d $@
+	@$(GO) install $@
