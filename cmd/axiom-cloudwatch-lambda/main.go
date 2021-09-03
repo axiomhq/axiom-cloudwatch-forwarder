@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -17,99 +19,110 @@ import (
 	lambdaParser "github.com/axiomhq/axiom-cloudwatch-lambda/parser/lambda"
 )
 
-var (
-	deploymentURL = os.Getenv("AXIOM_URL")
-	accessToken   = os.Getenv("AXIOM_TOKEN")
-	dataset       = os.Getenv("AXIOM_DATASET")
+const (
+	exitOK int = iota
+	exitConfig
 )
 
 func main() {
+	os.Exit(Main())
+}
+
+func Main() int {
+	// Export `AXIOM_TOKEN`, `AXIOM_ORG_ID` and `AXIOM_DATASET` for Axiom Cloud
+	// Export `AXIOM_URL`, `AXIOM_TOKEN` and `AXIOM_DATASET` for Axiom Selfhost
+
 	log.Print("starting axiom-cloudwatch-lambda version ", version.Release())
 
-	if deploymentURL == "" {
-		log.Fatal("missing AXIOM_URL")
-	}
-	if accessToken == "" {
-		log.Fatal("missing AXIOM_TOKEN")
-	}
+	ctx, cancel := signal.NotifyContext(context.Background(),
+		os.Interrupt,
+		os.Kill,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGQUIT,
+	)
+	defer cancel()
+
+	dataset := os.Getenv("AXIOM_DATASET")
 	if dataset == "" {
-		log.Fatal("missing AXIOM_DATASET")
+		log.Print("AXIOM_DATASET is required")
+		return exitConfig
 	}
 
-	lambda.Start(handler)
+	client, err := axiom.NewClient()
+	if err != nil {
+		log.Print(err)
+		return exitConfig
+	} else if err = client.ValidateCredentials(ctx); err != nil {
+		log.Print(err)
+		return exitConfig
+	}
+
+	lambda.StartWithContext(ctx, handler(client, dataset))
+
+	return exitOK
 }
 
-func handler(ctx context.Context, logsEvent events.CloudwatchLogsEvent) error {
-	data, _ := logsEvent.AWSLogs.Parse()
-	if len(data.LogEvents) == 0 {
+func handler(client *axiom.Client, dataset string) func(context.Context, events.CloudwatchLogsEvent) error {
+	return func(ctx context.Context, logsEvent events.CloudwatchLogsEvent) error {
+		data, _ := logsEvent.AWSLogs.Parse()
+		if len(data.LogEvents) == 0 {
+			return nil
+		}
+
+		events := make([]axiom.Event, 0, len(data.LogEvents))
+
+		service, group, sgParsed := lambdaParser.ParseServiceGroup(data.LogGroup)
+
+		for _, logEvent := range data.LogEvents {
+			cw := map[string]string{
+				"id":     logEvent.ID,
+				"group":  data.LogGroup,
+				"stream": data.LogStream,
+				"type":   data.MessageType,
+				"owner":  data.Owner,
+			}
+			if sgParsed {
+				cw["service"] = service
+				cw["group_name"] = group
+			}
+
+			var dict map[string]interface{}
+			switch cw["service"] {
+			case "lambda":
+				dict, cw["format"] = lambdaParser.MatchMessage(logEvent.Message)
+			case "eks":
+				dict, cw["format"] = eks.MatchMessage(data.LogStream, logEvent.Message)
+			default:
+				dict, cw["format"] = parser.MatchUnknownMessage(logEvent.Message)
+			}
+
+			if dict["format"] != parser.FormatJSON && service != "" {
+				dict = map[string]interface{}{
+					service: dict,
+				}
+			}
+
+			ev := axiom.Event{}
+			for k, v := range dict {
+				if !strings.HasPrefix(k, "cloudwatch.") && k != "cloudwatch" {
+					ev[k] = v
+				}
+			}
+
+			ev["cloudwatch"] = cw
+			ev[axiom.TimestampField] = logEvent.Timestamp
+
+			events = append(events, ev)
+		}
+
+		res, err := client.Datasets.IngestEvents(ctx, dataset, axiom.IngestOptions{}, events...)
+		if err != nil {
+			return fmt.Errorf("failed to send events: %w", err)
+		}
+
+		log.Printf("ingested %d of %d events into %q", res.Ingested, res.Failed, dataset)
+
 		return nil
 	}
-
-	events := make([]axiom.Event, 0, len(data.LogEvents))
-
-	service, group, sgParsed := lambdaParser.ParseServiceGroup(data.LogGroup)
-
-	for _, logEvent := range data.LogEvents {
-		cw := map[string]string{
-			"id":     logEvent.ID,
-			"group":  data.LogGroup,
-			"stream": data.LogStream,
-			"type":   data.MessageType,
-			"owner":  data.Owner,
-		}
-		if sgParsed {
-			cw["service"] = service
-			cw["group_name"] = group
-		}
-
-		var dict map[string]interface{}
-		switch cw["service"] {
-		case "lambda":
-			dict, cw["format"] = lambdaParser.MatchMessage(logEvent.Message)
-		case "eks":
-			dict, cw["format"] = eks.MatchMessage(data.LogStream, logEvent.Message)
-		default:
-			dict, cw["format"] = parser.MatchUnknownMessage(logEvent.Message)
-		}
-
-		if dict["format"] != parser.FormatJSON && service != "" {
-			dict = map[string]interface{}{
-				service: dict,
-			}
-		}
-
-		ev := axiom.Event{}
-		for k, v := range dict {
-			if !strings.HasPrefix(k, "cloudwatch.") && k != "cloudwatch" {
-				ev[k] = v
-			}
-		}
-
-		ev["cloudwatch"] = cw
-		ev[axiom.TimestampField] = logEvent.Timestamp
-
-		events = append(events, ev)
-	}
-
-	if err := sendEvents(ctx, events); err != nil {
-		return fmt.Errorf("failed to send events: %w", err)
-	}
-
-	return nil
-}
-
-func sendEvents(ctx context.Context, events []axiom.Event) error {
-	client, err := axiom.NewClient(deploymentURL, accessToken)
-	if err != nil {
-		return err
-	}
-
-	res, err := client.Datasets.IngestEvents(ctx, dataset, axiom.IngestOptions{}, events...)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("ingested %d of %d events into %q", res.Ingested, res.Failed, dataset)
-
-	return nil
 }
