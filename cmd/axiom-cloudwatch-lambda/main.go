@@ -5,62 +5,34 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/axiomhq/axiom-go/axiom"
-	"github.com/axiomhq/pkg/version"
+	"github.com/axiomhq/pkg/cmd"
+	"go.uber.org/zap"
 
 	"github.com/axiomhq/axiom-cloudwatch-lambda/parser"
 	"github.com/axiomhq/axiom-cloudwatch-lambda/parser/eks"
 	lambdaParser "github.com/axiomhq/axiom-cloudwatch-lambda/parser/lambda"
 )
 
-const (
-	exitOK int = iota
-	exitConfig
-)
-
 func main() {
-	os.Exit(Main())
+	cmd.Run("axiom-cloudwatch-lambda", run,
+		cmd.WithRequiredEnvVars("AXIOM_DATASET"),
+		cmd.WithValidateAxiomCredentials(),
+	)
 }
 
-func Main() int {
-	// Export `AXIOM_TOKEN`, `AXIOM_ORG_ID` and `AXIOM_DATASET` for Axiom Cloud
-	// Export `AXIOM_URL`, `AXIOM_TOKEN` and `AXIOM_DATASET` for Axiom Selfhost
+func run(ctx context.Context, _ *zap.Logger, client *axiom.Client) error {
+	// Export `AXIOM_TOKEN`, `AXIOM_ORG_ID` and `AXIOM_DATASET` for Axiom Cloud.
+	// Export `AXIOM_URL`, `AXIOM_TOKEN` and `AXIOM_DATASET` for Axiom Selfhost.
 
-	log.Print("starting axiom-cloudwatch-lambda version ", version.Release())
+	hf := handler(client, os.Getenv("AXIOM_DATASET"))
+	lambda.StartWithContext(ctx, hf)
 
-	ctx, cancel := signal.NotifyContext(context.Background(),
-		os.Interrupt,
-		os.Kill,
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGQUIT,
-	)
-	defer cancel()
-
-	dataset := os.Getenv("AXIOM_DATASET")
-	if dataset == "" {
-		log.Print("AXIOM_DATASET is required")
-		return exitConfig
-	}
-
-	client, err := axiom.NewClient()
-	if err != nil {
-		log.Print(err)
-		return exitConfig
-	} else if err = client.ValidateCredentials(ctx); err != nil {
-		log.Print(err)
-		return exitConfig
-	}
-
-	lambda.StartWithContext(ctx, handler(client, dataset))
-
-	return exitOK
+	return nil
 }
 
 func handler(client *axiom.Client, dataset string) func(context.Context, events.CloudwatchLogsEvent) error {
