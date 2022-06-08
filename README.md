@@ -1,84 +1,11 @@
-# Axiom Cloudwatch Lambda
+# Axiom CloudWatch Lambda [![CI](https://github.com/axiomhq/axiom-cloudwatch-lambda/actions/workflows/ci.yaml/badge.svg)](https://github.com/axiomhq/axiom-cloudwatch-lambda/actions/workflows/ci.yaml)
 
-[![Go Workflow][go_workflow_badge]][go_workflow]
-[![Coverage Status][coverage_badge]][coverage]
-[![Go Report][report_badge]][report]
-[![Latest Release][release_badge]][release]
-[![License][license_badge]][license]
+Easy to use AWS CloudFormation template to deploy a Bucket and a Lambda to send
+logs from your CloudWatch to [Axiom](https://axiom.co).
 
----
+## Guide
 
-## Table of Contents
-
-1. [Introduction](#introduction)
-1. [Usage](#usage)
-1. [Contributing](#contributing)
-1. [License](#license)
-
-## Introduction
-
-_Axiom Cloudwatch Lambda_ ships logs to Axiom, right within from a lambda
-function.
-
-## Installation
-
-### Download the pre-compiled and archived binary manually
-
-Binary releases are available on [GitHub Releases][1].
-
-  [1]: https://github.com/axiomhq/axiom-cloudwatch-lambda/releases/latest
-
-### Install from source
-
-```shell
-git clone https://github.com/axiomhq/axiom-cloudwatch-lambda.git
-cd axiom-cloudwatch-lambda
-make install
-```
-
-## Usage
-
-1. Upload the archive
-
-2. Set the following environment variables to connect to Axiom Cloud:
-
-* `AXIOM_TOKEN`: **Personal Access** or **Ingest** token. Can be created under
-  `Profile` or `Settings > Ingest Tokens`. For security reasons it is advised to
-  use an Ingest Token with minimal privileges only.
-* `AXIOM_ORG_ID`: The organization identifier of the organization to use
-* `AXIOM_DATASET`: Dataset to ship the logs to (must belong to the organization)
-
-When using Axiom Selfhost:
-
-* `AXIOM_TOKEN`: **Personal Access** or **Ingest** token. Can be created under
-  `Profile` or `Settings > Ingest Tokens`. For security reasons it is advised to
-  use an Ingest Token with minimal privileges only.
-* `AXIOM_URL`: URL of the Axiom deployment to use
-* `AXIOM_DATASET`: Dataset to ship the logs to (must belong to the organization)
-
-## Contributing
-
-Feel free to submit PRs or to fill issues. Every kind of help is appreciated.
-
-Before committing, `make` should run without any issues.
-
-## License
-
-&copy; Axiom, Inc., 2021
-
-Distributed under MIT License (`The MIT License`).
-
-See [LICENSE](LICENSE) for more information.
-
-<!-- Badges -->
-
-[go_workflow]: https://github.com/axiomhq/axiom-cloudwatch-lambda/actions/workflows/push.yml
-[go_workflow_badge]: https://img.shields.io/github/workflow/status/axiomhq/axiom-cloudwatch-lambda/Push?style=flat-square&ghcache=unused
-[coverage]: https://codecov.io/gh/axiomhq/axiom-cloudwatch-lambda
-[coverage_badge]: https://img.shields.io/codecov/c/github/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&ghcache=unused
-[report]: https://goreportcard.com/report/github.com/axiomhq/axiom-cloudwatch-lambda
-[report_badge]: https://goreportcard.com/badge/github.com/axiomhq/axiom-cloudwatch-lambda?style=flat-square&ghcache=unused
-[release]: https://github.com/axiomhq/axiom-cloudwatch-lambda/releases/latest
-[release_badge]: https://img.shields.io/github/release/axiomhq/axiom-cloudwatch-lambda.svg?style=flat-square&ghcache=unused
-[license]: https://opensource.org/licenses/MIT
-[license_badge]: https://img.shields.io/github/license/axiomhq/axiom-cloudwatch-lambda.svg?color=blue&style=flat-square&ghcache=unused
+1. Create an account at [Axiom Cloud](https://cloud.axiom.co)
+2. Create a dataset and an API token with ingest permission for that dataset
+3. Launch the stack: [![Launch Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=CloudWatch-Axiom&templateURL=https://axiom-cloudformation-stacks.s3.amazonaws.com/axiom-cloudwatch-lambda-cloudformation-stack.yaml)
+4. Set up your CloudWatch to store logs in the bucket you specified
