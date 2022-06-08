@@ -112,27 +112,22 @@ def lambda_handler(event: dict, context):
         "log_stream": data.get("logStream"),
         "message_type": data.get("messageType"),
         "subscription_filters": data.get("subscriptionFilters"),
-        "service_name": parsed.group(1) if parsed else None,
-        "parsed_log_group_name": parsed.group(2) if parsed else None,
     }
+
+    if parsed:
+        aws_fields["service"] = parsed.group(1)
+        aws_fields["function"] = parsed.group(2)
 
     events = []
     for log_event in data["logEvents"]:
         message = log_event["message"]
         data = structured_message(message)
 
-        # Create the attributes.
-        attributes = {}
-        attributes.update(aws_fields)
-        attributes.update(parse_message(message))
-
-        # Append the flattened event
         events.append(
             {
-                "_time": log_event["timestamp"],
-                "raw": message,
+                "_time": log_event["timestamp"] * 1000,
                 "aws": aws_fields,
-                "data": data,
+                "data": {"raw": message} if data is None else {"json": data},
             }
         )
 
