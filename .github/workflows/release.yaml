@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  YQ_VERSION: "4.25.1"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
+      - run: |-
+          mkdir build
+          yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' axiom-cloudwatch-lambda/handler.py)\""  axiom-cloudwatch-lambda/axiom-cloudwatch-lambda-cloudformation-stack.template.yaml > build/axiom-cloudwatch-lambda-cloudformation-stack.yaml
+      - uses: jakejarvis/s3-sync-action@v0.5.1
+        env:
+          SOURCE_DIR: build
+          AWS_S3_BUCKET: "axiom-cloudformation-stacks"
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}

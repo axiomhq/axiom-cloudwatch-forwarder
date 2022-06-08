@@ -1,0 +1,24 @@
+name: CI
+
+on: [push]
+
+env:
+  YQ_VERSION: "4.25.1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
+  build:
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+    steps:
+      - uses: actions/checkout@v3
+      - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
+      - run: |-
+          mkdir build
+          yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' axiom-cloudwatch-lambda/handler.py)\""  axiom-cloudwatch-lambda/axiom-cloudwatch-lambda-cloudformation-stack.template.yaml > build/axiom-cloudwatch-lambda-cloudformation-stack.yaml
+      - run: cat build/axiom-cloudwatch-lambda-cloudformation-stack.yaml
