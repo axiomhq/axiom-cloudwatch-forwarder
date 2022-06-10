@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import re
-import urllib
+import urllib.request
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -32,10 +32,10 @@ start_matcher = re.compile(
 # Max Memory Used: 20 MB
 report_matcher = re.compile(
     "REPORT RequestId:\s+(?P<request_id>\S+)\s+"
-    "Duration: (?P<duration>\S+) ms\s+"
-    "Billed Duration: (?P<billed_duration>\S+) ms\s+"
-    "Memory Size: (?P<memory_size>\S+) MB\s+"
-    "Max Memory Used: (?P<max_memory>\S+) MB"
+    "Duration: (?P<duration_ns>\S+) ms\s+"
+    "Billed Duration: (?P<billed_duration_ms>\S+) ms\s+"
+    "Memory Size: (?P<memory_size_mb>\S+) MB\s+"
+    "Max Memory Used: (?P<max_memory_mb>\S+) MB"
 )
 
 
@@ -86,26 +86,27 @@ def parse_message(message):
     m = None
 
     # Determine which matcher to use depending on the message type.
-    if message.startswith("END"):
+    if message.startswith("REPORT"):
+        m = report_matcher.match(message)
+        m = m.groupdict()
+        # convert from string to number
+        m["duration_ns"] = int(float(m["duration_ns"]) * 1000)
+        m["billed_duration_ms"] = int(m["billed_duration_ms"])
+        m["memory_size_mb"] = int(m["memory_size_mb"])
+        m["max_memory_mb"] = int(m["max_memory_mb"])
+        return m
+    elif message.startswith("END"):
         m = end_matcher.match(message)
     elif message.startswith("START"):
         m = start_matcher.match(message)
-    elif message.startswith("REPORT"):
-        m = report_matcher.match(message)
     else:
         m = std_matcher.match(message)
 
-    if m:
-        return m.groupdict()
-    else:
-        return {}
+    return m.groupdict()
 
 
-def lambda_handler(event: dict, context):
+def lambda_handler(event: dict, context=None):
     data = data_from_event(event)
-
-    pattern_obj = re.compile("^/aws/(lambda|apigateway)/(.*)")
-    parsed = pattern_obj.match(data.get("", ""))
 
     aws_fields = {
         "owner": data.get("owner"),
@@ -115,22 +116,30 @@ def lambda_handler(event: dict, context):
         "subscription_filters": data.get("subscriptionFilters"),
     }
 
+    # this is an extra field, we can extend this without a problem
+    pattern_obj = re.compile("^/aws/(lambda|apigateway|eks|rds)/(.*)")
+    parsed = pattern_obj.match(data.get("", ""))
     if parsed:
         aws_fields["service"] = parsed.group(1)
         aws_fields["function"] = parsed.group(2)
 
     events = []
     for log_event in data["logEvents"]:
-        message = parse_message(log_event["message"])
-        data = structured_message(message)
+        message = log_event["message"]
+        ev = {
+            "_time": log_event["timestamp"] * 1000,
+            "aws": aws_fields,
+            "message": log_event["message"],
+        }
+        if not os.getenv("DISABLE_JSON").lower() in ("true", "1", "t"):
+            data = structured_message(parse_message(message))
+            if data != None:
+                ev["fields"] = data
 
-        events.append(
-            {
-                "_time": log_event["timestamp"] * 1000,
-                "aws": aws_fields,
-                "data": {"raw": message} if data is None else {"json": data},
-            }
-        )
+        events.append(ev)
 
-    # push_events_to_axiom(events)
-    print(json.dumps(events, indent=2))
+    try:
+        push_events_to_axiom(events)
+    except Exception as e:
+        print(f"Error pushing events to axiom: {e}")
+        raise e
