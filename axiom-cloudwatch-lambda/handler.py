@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import urllib
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -120,7 +121,7 @@ def lambda_handler(event: dict, context):
 
     events = []
     for log_event in data["logEvents"]:
-        message = log_event["message"]
+        message = parse_message(log_event["message"])
         data = structured_message(message)
 
         events.append(
