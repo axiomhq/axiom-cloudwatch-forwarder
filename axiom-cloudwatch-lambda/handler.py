@@ -73,7 +73,7 @@ def push_events_to_axiom(events: list):
     if result.status != 200:
         raise f"Unexpected status {result.status}"
     else:
-        print(f"Ingested {len(events)} events")
+        logger.info(f"Successfully pushed {len(events)} events to axiom")
 
 
 def data_from_event(event: dict) -> dict:
@@ -102,7 +102,7 @@ def parse_message(message):
     else:
         m = std_matcher.match(message)
 
-    return m.groupdict()
+    return {} if m is None else m.groupdict()
 
 
 def lambda_handler(event: dict, context=None):
@@ -141,5 +141,5 @@ def lambda_handler(event: dict, context=None):
     try:
         push_events_to_axiom(events)
     except Exception as e:
-        print(f"Error pushing events to axiom: {e}")
+        logger.error(f"Error pushing events to axiom: {e}")
         raise e
