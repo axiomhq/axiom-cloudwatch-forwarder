@@ -131,7 +131,7 @@ def lambda_handler(event: dict, context=None):
             "aws": aws_fields,
             "message": log_event["message"],
         }
-        if not os.getenv("DISABLE_JSON").lower() in ("true", "1", "t"):
+        if not os.getenv("DISABLE_JSON", "").lower() in ("true", "1", "t"):
             data = structured_message(parse_message(message))
             if data != None:
                 ev["fields"] = data
