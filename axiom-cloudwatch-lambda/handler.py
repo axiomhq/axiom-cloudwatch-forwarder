@@ -31,7 +31,7 @@ start_matcher = re.compile(
 # Max Memory Used: 20 MB
 report_matcher = re.compile(
     "REPORT RequestId:\s+(?P<requestID>\S+)\s+"
-    "Duration: (?P<durationNS>\S+) ms\s+"
+    "Duration: (?P<durationMS>\S+) ms\s+"
     "Billed Duration: (?P<billedDurationMS>\S+) ms\s+"
     "Memory Size: (?P<memorySizeMB>\S+) MB\s+"
     "Max Memory Used: (?P<maxMemoryMB>\S+) MB"
@@ -87,7 +87,7 @@ def parse_message(message):
         m = report_matcher.match(message)
         m = m.groupdict()
         # convert from string to number
-        m["durationNS"] = int(float(m["durationNS"]) * 1000)
+        m["durationMS"] = float(m["durationMS"])
         m["billedDurationMS"] = int(m["billedDurationMS"])
         m["memorySizeMB"] = int(m["memorySizeMB"])
         m["maxMemoryMB"] = int(m["maxMemoryMB"])
