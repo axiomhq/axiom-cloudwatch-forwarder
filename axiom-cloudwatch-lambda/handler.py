@@ -13,15 +13,15 @@ logger.setLevel(level)
 
 
 # Standard out from Lambdas.
-std_matcher = re.compile("\d\d\d\d-\d\d-\d\d\S+\s+(?P<request_id>\S+)")
+std_matcher = re.compile("\d\d\d\d-\d\d-\d\d\S+\s+(?P<requestID>\S+)")
 
 # END RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
-end_matcher = re.compile("END RequestId:\s+(?P<request_id>\S+)")
+end_matcher = re.compile("END RequestId:\s+(?P<requestID>\S+)")
 
 # START RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
 # Version: $LATEST
 start_matcher = re.compile(
-    "START RequestId:\s+(?P<request_id>\S+)\s+" "Version: (?P<version>\S+)"
+    "START RequestId:\s+(?P<requestID>\S+)\s+" "Version: (?P<version>\S+)"
 )
 
 # REPORT RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
@@ -30,11 +30,11 @@ start_matcher = re.compile(
 # Memory Size: 128 MB
 # Max Memory Used: 20 MB
 report_matcher = re.compile(
-    "REPORT RequestId:\s+(?P<request_id>\S+)\s+"
-    "Duration: (?P<duration_ns>\S+) ms\s+"
-    "Billed Duration: (?P<billed_duration_ms>\S+) ms\s+"
-    "Memory Size: (?P<memory_size_mb>\S+) MB\s+"
-    "Max Memory Used: (?P<max_memory_mb>\S+) MB"
+    "REPORT RequestId:\s+(?P<requestID>\S+)\s+"
+    "Duration: (?P<durationNS>\S+) ms\s+"
+    "Billed Duration: (?P<billedDurationMS>\S+) ms\s+"
+    "Memory Size: (?P<memorySizeMB>\S+) MB\s+"
+    "Max Memory Used: (?P<maxMemoryMB>\S+) MB"
 )
 
 
@@ -87,10 +87,10 @@ def parse_message(message):
         m = report_matcher.match(message)
         m = m.groupdict()
         # convert from string to number
-        m["duration_ns"] = int(float(m["duration_ns"]) * 1000)
-        m["billed_duration_ms"] = int(m["billed_duration_ms"])
-        m["memory_size_mb"] = int(m["memory_size_mb"])
-        m["max_memory_mb"] = int(m["max_memory_mb"])
+        m["durationNS"] = int(float(m["durationNS"]) * 1000)
+        m["billedDurationMS"] = int(m["billedDurationMS"])
+        m["memorySizeMB"] = int(m["memorySizeMB"])
+        m["maxMemoryMB"] = int(m["maxMemoryMB"])
         return m
     elif message.startswith("END"):
         m = end_matcher.match(message)
@@ -102,15 +102,19 @@ def parse_message(message):
     return {} if m is None else m.groupdict()
 
 
-def split_loggroup(loggroup: str):
+def split_log_group(log_group: str):
     # this is an extra field, we can extend this without a problem
     pattern_obj = re.compile("^/aws/(lambda|apigateway|eks|rds)/(.*)")
-    parsed = pattern_obj.match(loggroup)
+    parsed = pattern_obj.match(log_group)
     if parsed is None:
         return {}
+
+    service_name = parsed.group(1)
+    log_group_name = parsed.group(2)
+
     return {
-        "service_name": parsed.group(1),
-        "log_group_name": parsed.group(2),
+        "serviceName": service_name if service_name is not None else "unknown",
+        "logGroupName": log_group_name if log_group_name is not None else "",
     }
 
 
@@ -124,16 +128,16 @@ def lambda_handler(event: dict, context=None):
 
     aws_fields = {
         "owner": data.get("owner"),
-        "log_group": data.get("logGroup"),
-        "log_stream": data.get("logStream"),
-        "message_type": data.get("messageType"),
-        "subscription_filters": data.get("subscriptionFilters"),
+        "logGroup": data.get("logGroup"),
+        "logStream": data.get("logStream"),
+        "messageType": data.get("messageType"),
+        "subscriptionFilters": data.get("subscriptionFilters"),
     }
 
     # parse the loggroup to get the service and function
-    if aws_fields["log_group"] is not None:
+    if aws_fields["logGroup"] is not None:
         # add the service and function to the fields
-        extra = split_loggroup(aws_fields["log_group"])
+        extra = split_log_group(aws_fields["logGroup"])
         if extra is not None:
             aws_fields.update(extra)
 
@@ -152,8 +156,9 @@ def lambda_handler(event: dict, context=None):
 
             json_data = structured_message(msg)
             data = json_data if json_data is not None else msg
+            data = {aws_fields["serviceName"]: data}
             if data != None:
-                ev["fields"] = data
+                ev.update(data)
 
         events.append(ev)
 
