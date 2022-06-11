@@ -147,6 +147,9 @@ def lambda_handler(event: dict, context=None):
         }
         if os.getenv("DISABLE_JSON", "false").lower() not in ("true", "1", "t"):
             msg = parse_message(message)
+            if len(msg) == 0:
+                msg = message
+
             json_data = structured_message(msg)
             data = json_data if json_data is not None else msg
             if data != None:
