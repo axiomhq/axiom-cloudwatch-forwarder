@@ -24,7 +24,6 @@ start_matcher = re.compile(
     "START RequestId:\s+(?P<request_id>\S+)\s+" "Version: (?P<version>\S+)"
 )
 
-
 # REPORT RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
 # Duration: 0.47 ms
 # Billed Duration: 100 ms
@@ -39,6 +38,11 @@ report_matcher = re.compile(
 )
 
 
+# push events to axiom
+axiom_url = os.getenv("AXIOM_URL", "https://cloud.axiom.co")
+axiom_token = os.getenv("AXIOM_TOKEN")
+axiom_dataset = os.getenv("AXIOM_DATASET")
+
 # try to get json from message
 def structured_message(message: str):
     try:
@@ -50,13 +54,6 @@ def structured_message(message: str):
 def push_events_to_axiom(events: list):
     if len(events) == 0:
         return
-
-    # push events to axiom
-    axiom_url = os.getenv("AXIOM_URL")
-    if axiom_url == None:
-        axiom_url = "https://cloud.axiom.co"
-    axiom_token = os.getenv("AXIOM_TOKEN")
-    axiom_dataset = os.getenv("AXIOM_DATASET")
 
     url = f"{axiom_url}/api/v1/datasets/{axiom_dataset}/ingest"
     data = json.dumps(events)
@@ -105,7 +102,24 @@ def parse_message(message):
     return {} if m is None else m.groupdict()
 
 
+def split_loggroup(loggroup: str):
+    # this is an extra field, we can extend this without a problem
+    pattern_obj = re.compile("^/aws/(lambda|apigateway|eks|rds)/(.*)")
+    parsed = pattern_obj.match(loggroup)
+    if parsed is None:
+        return {}
+    return {
+        "service_name": parsed.group(1),
+        "log_group_name": parsed.group(2),
+    }
+
+
 def lambda_handler(event: dict, context=None):
+    if axiom_token is None:
+        raise Exception("AXIOM_TOKEN is not set")
+    if axiom_dataset is None:
+        raise Exception("AXIOM_DATASET is not set")
+
     data = data_from_event(event)
 
     aws_fields = {
@@ -116,12 +130,12 @@ def lambda_handler(event: dict, context=None):
         "subscription_filters": data.get("subscriptionFilters"),
     }
 
-    # this is an extra field, we can extend this without a problem
-    pattern_obj = re.compile("^/aws/(lambda|apigateway|eks|rds)/(.*)")
-    parsed = pattern_obj.match(data.get("", ""))
-    if parsed:
-        aws_fields["service"] = parsed.group(1)
-        aws_fields["function"] = parsed.group(2)
+    # parse the loggroup to get the service and function
+    if aws_fields["log_group"] is not None:
+        # add the service and function to the fields
+        extra = split_loggroup(aws_fields["log_group"])
+        if extra is not None:
+            aws_fields.update(extra)
 
     events = []
     for log_event in data["logEvents"]:
@@ -131,8 +145,10 @@ def lambda_handler(event: dict, context=None):
             "aws": aws_fields,
             "message": log_event["message"],
         }
-        if not os.getenv("DISABLE_JSON", "").lower() in ("true", "1", "t"):
-            data = structured_message(parse_message(message))
+        if os.getenv("DISABLE_JSON", "false").lower() not in ("true", "1", "t"):
+            msg = parse_message(message)
+            json_data = structured_message(msg)
+            data = json_data if json_data is not None else msg
             if data != None:
                 ev["fields"] = data
 
