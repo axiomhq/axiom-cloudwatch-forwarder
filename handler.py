@@ -42,7 +42,7 @@ report_matcher = re.compile(
 axiom_url = os.getenv("AXIOM_URL", "https://cloud.axiom.co").strip("/")
 axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
-disable_json = (os.getenv("DISABLE_JSON", "false") == "true")
+disable_json = os.getenv("DISABLE_JSON", "false") == "true"
 
 # try to get json from message
 def structured_message(message: str):
@@ -147,10 +147,10 @@ def lambda_handler(event: dict, context=None):
         ev = {
             "_time": log_event["timestamp"] * 1000,
             "aws": aws_fields,
-            "message": message, 
+            "message": message,
         }
 
-        json_data = None    
+        json_data = None
         if not disable_json:
             # Try to Parse message as json
             json_data = structured_message(message)
