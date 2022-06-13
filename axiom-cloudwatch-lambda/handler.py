@@ -39,7 +39,7 @@ report_matcher = re.compile(
 
 
 # push events to axiom
-axiom_url = os.getenv("AXIOM_URL", "https://cloud.axiom.co")
+axiom_url = os.getenv("AXIOM_URL", "https://cloud.axiom.co").strip()
 axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
 
