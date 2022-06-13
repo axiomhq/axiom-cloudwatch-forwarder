@@ -1,0 +1,75 @@
+Parameters:
+  AxiomToken:
+    Description: The Token of User in Axiom. Must start with xaat- or xait-.
+    Type: String
+    NoEcho: true
+    AllowedPattern: "^(xaat-|xait-).*"
+  AxiomURL:
+    Type: String
+    Default: "https://cloud.axiom.co"
+    AllowedPattern: ".+" # required
+    Description: The URL of Axiom endpoint. Defaults to "https://cloud.axiom.co".
+  AxiomDataset:
+    Type: String
+    Description: The Name of the Dataset in Axiom.
+    AllowedPattern: ".+" # required
+  CloudWatchLogGroupName:
+    Type: String
+    Description: The Name of the CloudWatch Log Group Name.
+    AllowedPattern: ".+" # required
+Resources:
+  LogGroupSubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties: 
+      DestinationArn: !GetAtt
+        - LogsLambda
+        - Arn
+      FilterPattern: ""
+      LogGroupName: !Ref 'CloudWatchLogGroupName'
+  LogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+  LogsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.9
+      FunctionName: axiom-cloudwatch-lambda
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          # DO NOT EDIT
+          # CI will replace these comments with the code from ./handler.py
+      Role: !GetAtt
+        - LogsRole
+        - Arn
+      Environment:
+        Variables:
+          AXIOM_TOKEN: !Ref 'AxiomToken'
+          AXIOM_DATASET: !Ref 'AxiomDataset'
+          AXIOM_URL: !Ref 'AxiomURL'
+  LogsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - LogsLambda
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref 'LogsLambda'
+      Principal: !Sub
+        - 'logs.${Region}.amazonaws.com'
+        - Region: !Ref 'AWS::Region'
+      SourceAccount: !Ref 'AWS::AccountId'
+      SourceArn: !Sub
+        - 'arn:aws:logs:${Region}:${AccountID}:log-group:${LogGroupName}:*'
+        - AccountID: !Ref 'AWS::AccountId'
+          Region: !Ref 'AWS::Region'
+          LogGroupName: !Ref 'CloudWatchLogGroupName'
