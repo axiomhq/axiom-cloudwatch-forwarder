@@ -17,6 +17,11 @@ Parameters:
     Type: String
     Description: The name of the AWS Cloudwatch Log Group to subscribe to.
     AllowedPattern: ".+" # required
+  LambdaFunctionName:
+    Type: String
+    Description: Name of the AWS Lambda Function.
+    Default: axiom-cloudwatch-lambda
+    AllowedPattern: ".+" # required
   DisableJSON:
     Type: String
     AllowedValues:
@@ -49,6 +54,7 @@ Resources:
   LogsLambda:
     Type: AWS::Lambda::Function
     Properties:
+      FunctionName: !Ref LambdaFunctionName
       Runtime: python3.9
       FunctionName: axiom-cloudwatch-lambda
       Handler: index.lambda_handler
