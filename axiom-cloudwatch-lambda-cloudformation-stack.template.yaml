@@ -8,7 +8,7 @@ Parameters:
     Type: String
     Default: "https://cloud.axiom.co"
     AllowedPattern: ".+" # required
-    Description: The URL of Axiom endpoint. Defaults to "https://cloud.axiom.co".
+    Description: The URL of Axiom endpoint (without trailing /). Defaults to "https://cloud.axiom.co".
   AxiomDataset:
     Type: String
     Description: The Name of the Dataset in Axiom.
@@ -17,6 +17,13 @@ Parameters:
     Type: String
     Description: The Name of the CloudWatch Log Group Name.
     AllowedPattern: ".+" # required
+  DisableJSON:
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Description: Whether or not disable json logs. defaults to false.
 Resources:
   LogGroupSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
@@ -57,6 +64,7 @@ Resources:
           AXIOM_TOKEN: !Ref 'AxiomToken'
           AXIOM_DATASET: !Ref 'AxiomDataset'
           AXIOM_URL: !Ref 'AxiomURL'
+          DISABLE_JSON: !Ref DisableJSON
   LogsLambdaPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
