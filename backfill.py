@@ -7,25 +7,26 @@ logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
 
-cloudwatch_logs_client = boto3.client('logs')
-lambda_client = boto3.client('lambda')
+cloudwatch_logs_client = boto3.client("logs")
+lambda_client = boto3.client("lambda")
 
 axiom_cloudwatch_lambda_ingester_arn = os.getenv("AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN")
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
 log_groups_return_limit = int(os.getenv("LOG_GROUPS_LIMIT", 10))
 
-def get_log_groups(token = None):
+
+def get_log_groups(token=None):
     if token is None:
         return cloudwatch_logs_client.describe_log_groups(
-            logGroupNamePrefix=log_group_prefix,
-            limit=log_groups_return_limit
+            logGroupNamePrefix=log_group_prefix, limit=log_groups_return_limit
         )
     else:
         return cloudwatch_logs_client.describe_log_groups(
             logGroupNamePrefix=log_group_prefix,
             nextToken=token,
-            limit=log_groups_return_limit
+            limit=log_groups_return_limit,
         )
+
 
 def delete_subscription_filter(log_group_arn, lambda_arn):
     try:
@@ -39,15 +40,17 @@ def delete_subscription_filter(log_group_arn, lambda_arn):
         )
 
         cloudwatch_logs_client.delete_subscription_filter(
-            logGroupName=log_group_name,
-            filterName="%s-axiom" % log_group_name
+            logGroupName=log_group_name, filterName="%s-axiom" % log_group_name
         )
-        
-        logger.info(f"{log_group_name} subscription filter has been deleted successfully.")
+
+        logger.info(
+            f"{log_group_name} subscription filter has been deleted successfully."
+        )
 
     except Exception as e:
         logger.error(f"Error deleting Subscription filter: {e}")
         raise e
+
 
 def create_subscription_filter(log_group_arn, lambda_arn):
     try:
@@ -56,7 +59,7 @@ def create_subscription_filter(log_group_arn, lambda_arn):
         lambda_client.add_permission(
             FunctionName=lambda_arn,
             StatementId="%s-axiom" % log_group_name.replace("/", "-"),
-            Action='lambda:InvokeFunction',
+            Action="lambda:InvokeFunction",
             Principal=f"logs.amazonaws.com",
             SourceArn=log_group_arn,
         )
@@ -66,18 +69,21 @@ def create_subscription_filter(log_group_arn, lambda_arn):
             filterName="%s-axiom" % log_group_name,
             filterPattern="",
             destinationArn=lambda_arn,
-            distribution="ByLogStream"
+            distribution="ByLogStream",
         )
-        logger.info(f"{log_group_name} subscription filter has been created successfully.")
+        logger.info(
+            f"{log_group_name} subscription filter has been created successfully."
+        )
     except Exception as e:
         logger.error(f"Error create Subscription filter: {e}")
         raise e
 
+
 def lambda_handler(event: dict, context=None):
     if axiom_cloudwatch_lambda_ingester_arn is None:
         raise Exception("AXIOM_AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARNTOKEN is not set")
-    
-    def log_groups(token = None):
+
+    def log_groups(token=None):
         groups_response = get_log_groups(token)
         groups = groups_response["logGroups"]
         token = groups_response["nextToken"] if "nextToken" in groups_response else None
@@ -87,11 +93,15 @@ def lambda_handler(event: dict, context=None):
 
         for group in groups:
             try:
-                delete_subscription_filter(group["arn"], axiom_cloudwatch_lambda_ingester_arn)
+                delete_subscription_filter(
+                    group["arn"], axiom_cloudwatch_lambda_ingester_arn
+                )
             except Exception:
                 pass
 
-            create_subscription_filter(group["arn"], axiom_cloudwatch_lambda_ingester_arn)
+            create_subscription_filter(
+                group["arn"], axiom_cloudwatch_lambda_ingester_arn
+            )
 
         if token is None:
             return
