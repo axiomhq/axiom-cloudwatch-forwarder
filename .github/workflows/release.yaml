@@ -11,16 +11,13 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        template:
-          - axiom-cloudwatch-lambda-cloudformation-stack
     steps:
       - uses: actions/checkout@v3
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
       - run: |-
           mkdir build
-          yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./handler.py)\""  ${{ matrix.template }}.template.yaml > build/${{ matrix.template }}.yaml
+          yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./handler.py)\""  axiom-cloudwatch-lambda-cloudformation-stack.template.yaml.template.yaml > build/axiom-cloudwatch-lambda-cloudformation-stack..yaml
+          yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./backfill.py)\""  axiom-cloudwatch-backfiller-lambda-cloudformation-stack.template.yaml > build/axiom-cloudwatch-backfiller-lambda-cloudformation-stack.yaml
       - uses: jakejarvis/s3-sync-action@v0.5.1
         env:
           SOURCE_DIR: build

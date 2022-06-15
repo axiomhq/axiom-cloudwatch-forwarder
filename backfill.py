@@ -1,11 +1,13 @@
 import boto3
 import os
 import logging
+import cfnresponse
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
+
 
 cloudwatch_logs_client = boto3.client("logs")
 lambda_client = boto3.client("lambda")
@@ -105,6 +107,18 @@ def lambda_handler(event: dict, context=None):
 
         if token is None:
             return
-        log_groups(token)
 
-    log_groups()
+        try:
+            log_groups(token)
+        except Exception as e:
+            raise e
+
+    responseData = {}
+    try:
+        log_groups()
+    except Exception as e:
+        responseData["success"] = "False"
+        cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+
+    responseData["success"] = "True"
+    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
