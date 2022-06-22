@@ -22,6 +22,9 @@ Parameters:
     Description: Name of the AWS Lambda Function.
     Default: axiom-cloudwatch-lambda
     AllowedPattern: ".+" # required
+  DataTags:
+    Type: String
+    Description: Tags to be included with the data ingested into axiom. e.g. <key1>=<value1>,<key2>=<value2>.
   DisableJSON:
     Type: String
     AllowedValues:
@@ -71,6 +74,7 @@ Resources:
           AXIOM_DATASET: !Ref 'AxiomDataset'
           AXIOM_URL: !Ref 'AxiomURL'
           DISABLE_JSON: !Ref DisableJSON
+          DATA_TAGS: !Ref DataTags
   LogsLambdaPermission:
     Type: AWS::Lambda::Permission
     DependsOn:

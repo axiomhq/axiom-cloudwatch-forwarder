@@ -43,6 +43,16 @@ axiom_url = os.getenv("AXIOM_URL", "https://cloud.axiom.co").strip("/")
 axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
 disable_json = os.getenv("DISABLE_JSON", "false") == "true"
+data_tags_string = os.getenv("DATA_TAGS")
+
+data_tags = {}
+if data_tags_string != "":
+    data_tags_list = data_tags_string.split(",")
+    for tag in data_tags_list:
+        tag_splitted = tag.strip(" ").split("=")
+        if len(tag_splitted) != 2:
+            continue
+        data_tags[tag_splitted[0]] = tag_splitted[1]
 
 # try to get json from message
 def structured_message(message: str):
@@ -134,6 +144,9 @@ def lambda_handler(event: dict, context=None):
         "messageType": data.get("messageType"),
         "subscriptionFilters": data.get("subscriptionFilters"),
     }
+
+    if len(data_tags) > 0:
+        aws_fields.update({"tags": data_tags})
 
     # parse the loggroup to get the service and function
     if aws_fields["logGroup"] is not None:
