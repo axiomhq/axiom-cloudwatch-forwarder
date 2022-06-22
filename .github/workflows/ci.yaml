@@ -21,5 +21,5 @@ jobs:
       - run: |-
           mkdir build
           yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./handler.py)\""  axiom-cloudwatch-lambda-cloudformation-stack.template.yaml > build/axiom-cloudwatch-lambda-cloudformation-stack.yaml
-          yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./backfill.py)\""  axiom-cloudwatch-backfiller-lambda-cloudformation-stack.template.yaml > build/axiom-cloudwatch-backfiller-lambda-cloudformation-stack.yaml
+          yq ".Resources.BackfillerLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./backfill.py)\""  axiom-cloudwatch-backfiller-lambda-cloudformation-stack.template.yaml > build/axiom-cloudwatch-backfiller-lambda-cloudformation-stack.yaml
       - run: cat build/*
