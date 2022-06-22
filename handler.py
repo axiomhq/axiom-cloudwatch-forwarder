@@ -133,7 +133,6 @@ def lambda_handler(event: dict, context=None):
         "logStream": data.get("logStream"),
         "messageType": data.get("messageType"),
         "subscriptionFilters": data.get("subscriptionFilters"),
-        "region": os.environ["AWS_REGION"],
     }
 
     # parse the loggroup to get the service and function
