@@ -118,7 +118,7 @@ def split_log_group(log_group: str):
     pattern_obj = re.compile("^/aws/(lambda|apigateway|eks|rds)/(.*)")
     parsed = pattern_obj.match(log_group)
     if parsed is None:
-        return {}
+        return {"serviceName": "unknown", "logGroupName": log_group}
 
     service_name = parsed.group(1)
     log_group_name = parsed.group(2)
@@ -163,24 +163,23 @@ def lambda_handler(event: dict, context=None):
             "message": message,
         }
 
+        lambda_data = None
         json_data = None
         if not disable_json:
             # Try to Parse message as json
             json_data = structured_message(message)
             if json_data is not None:
                 # Data is parsed to JSON, so use it
-                data = json_data
+                lambda_data = json_data
 
         # Parse json is not allowed or failed.
         if json_data is None:
             msg = parse_message(message)
-            if len(msg) == 0:
-                msg = message
+            if len(msg) != 0:
+                lambda_data = msg
 
-            data = msg
-
-        data = {aws_fields["serviceName"]: data}
-        ev.update(data)
+        if lambda_data is not None:
+            ev.update({aws_fields["serviceName"]: lambda_data})
 
         events.append(ev)
 
