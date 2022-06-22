@@ -43,11 +43,16 @@ axiom_url = os.getenv("AXIOM_URL", "https://cloud.axiom.co").strip("/")
 axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
 disable_json = os.getenv("DISABLE_JSON", "false") == "true"
-data_tags_list = os.getenv("DATA_TAGS").split(",")
+data_tags_string = os.getenv("DATA_TAGS")
+
 data_tags = {}
-for tag in data_tags_list:
-    tag_splitted = tag.strip(" ").split("=")
-    data_tags[tag_splitted[0]] = tag_splitted[1]
+if data_tags_string != "":
+    data_tags_list = data_tags_string.split(",")
+    for tag in data_tags_list:
+        tag_splitted = tag.strip(" ").split("=")
+        if len(tag_splitted) != 2:
+            continue
+        data_tags[tag_splitted[0]] = tag_splitted[1]
 
 # try to get json from message
 def structured_message(message: str):
