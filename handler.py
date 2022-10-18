@@ -179,7 +179,8 @@ def lambda_handler(event: dict, context=None):
                 lambda_data = msg
 
         if lambda_data is not None:
-            ev.update({aws_fields["serviceName"]: lambda_data})
+            if "serviceName" in aws_fields:
+                ev.update({aws_fields["serviceName"]: lambda_data})
 
         events.append(ev)
 
