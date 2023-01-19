@@ -115,7 +115,7 @@ def parse_message(message):
 
 def split_log_group(log_group: str):
     # this is an extra field, we can extend this without a problem
-    pattern_obj = re.compile("^/aws/(lambda|apigateway|eks|rds)/(.*)")
+    pattern_obj = re.compile("^/aws/(lambda|apigateway|eks|rds|ecs)/(.*)")
     parsed = pattern_obj.match(log_group)
     if parsed is None:
         return {"serviceName": "unknown", "logGroupName": log_group}
