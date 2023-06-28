@@ -143,6 +143,8 @@ def lambda_handler(event: dict, context=None):
         "logStream": data.get("logStream"),
         "messageType": data.get("messageType"),
         "subscriptionFilters": data.get("subscriptionFilters"),
+        "serviceName": "unknown",
+        "logGroupName": ""
     }
 
     if len(data_tags) > 0:
