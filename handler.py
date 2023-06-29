@@ -54,6 +54,7 @@ if data_tags_string != "":
             continue
         data_tags[tag_splitted[0]] = tag_splitted[1]
 
+
 # try to get json from message
 def structured_message(message: str):
     try:
@@ -143,6 +144,8 @@ def lambda_handler(event: dict, context=None):
         "logStream": data.get("logStream"),
         "messageType": data.get("messageType"),
         "subscriptionFilters": data.get("subscriptionFilters"),
+        "serviceName": "unknown",
+        "logGroupName": "",
     }
 
     if len(data_tags) > 0:
