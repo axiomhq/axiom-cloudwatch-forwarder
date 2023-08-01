@@ -86,11 +86,10 @@ def push_events_to_axiom(events: list):
 
 
 def data_from_event(event: dict) -> dict:
-    
     if "awslogs" not in event or "data" not in event["awslogs"]:
         logger.warning(f"Unexpected event format: {json.dumps(event)}")
         return {}
-    
+
     body = base64.b64decode(event["awslogs"]["data"])
     data = gzip.decompress(body)
     return json.loads(data)
