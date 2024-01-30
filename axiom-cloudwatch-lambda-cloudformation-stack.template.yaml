@@ -59,7 +59,6 @@ Resources:
     Properties:
       FunctionName: !Ref LambdaFunctionName
       Runtime: python3.9
-      FunctionName: axiom-cloudwatch-lambda
       Handler: index.lambda_handler
       Code:
         ZipFile: |
