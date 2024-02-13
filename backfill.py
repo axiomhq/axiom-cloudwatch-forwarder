@@ -83,7 +83,7 @@ def create_subscription_filter(log_group_arn, lambda_arn):
 
 def lambda_handler(event: dict, context=None):
     if axiom_cloudwatch_lambda_ingester_arn is None:
-        raise Exception("AXIOM_AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARNTOKEN is not set")
+        raise Exception("AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN is not set")
 
     def log_groups(token=None):
         groups_response = get_log_groups(token)
