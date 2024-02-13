@@ -12,36 +12,14 @@ Parameters:
     Type: String
     Description: The Prefix of cloudwatch log groups to subscribe to the AWS Lambda ingester.
     Default: "" # all
-  EnableCloudWatchLogsAutoSubscription:
-    Type: String
-    Description: Make the log ingester automatically subscribe to new log groups specified with the logs subscription prefix parameter. Set to 'true' to enable
-    AllowedValues:
-      - true
-      - false
-    Default: true
-  CreateCloudTrailAndS3BucketForAutoSubscription:
-    Type: String
-    Description: Create a CloudTrail and S3 bucket for the auto subscription. Set to 'true' to enable
-    AllowedValues:
-      - true
-      - false
-    Default: true
-Conditions:
-  CreateAutoSubscriptionResources: !Equals [!Ref EnableCloudWatchLogsAutoSubscription, "true"]
-  CreateCloudTrailAndS3BucketForAutoSubscription: !Equals [!Ref CreateCloudTrailForAutoSubscription, "true"]
-  CreateCloudTrailAndS3BucketAndEnableAutoSubscription: !And
-    - condition: CreateAutoSubscriptionResources
-    - condition: CreateCloudTrailAndS3BucketForAutoSubscription
 Resources:
   AxiomCloudWatchLogsSubscriberS3Bucket:
     Type: AWS::S3::Bucket
-    Condition: CreateCloudTrailAndS3BucketAndEnableAutoSubscription
     Properties:
       AccessControl: BucketOwnerFullControl
       BucketName: !Join [ "-", [ !Ref AWS::StackName, "axiom", "cloudtrail" ] ]
   AxiomCloudWatchLogsSubscriberS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
-    Condition: CreateCloudTrailAndS3BucketAndEnableAutoSubscription
     DependsOn: AxiomCloudWatchLogsSubscriberS3Bucket
     Properties:
       Bucket: !Ref AxiomCloudWatchLogsSubscriberS3Bucket
@@ -78,7 +56,6 @@ Resources:
         }
   AxiomLogsSubscriberCloudTrail:
     Type: AWS::CloudTrail::Trail
-    Condition: CreateCloudTrailAndS3BucketAndEnableAutoSubscription
     DependsOn: AxiomCloudWatchLogsSubscriberS3BucketPolicy
     Properties:
       EnableLogFileValidation: false
