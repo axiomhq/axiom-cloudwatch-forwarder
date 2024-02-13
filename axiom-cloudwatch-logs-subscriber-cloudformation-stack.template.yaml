@@ -103,16 +103,11 @@ Resources:
         "Fn::Join":
           ["-", [{ "Ref": "AWS::StackName" }, "axiom-auto-subscription-rule"]]
       Targets:
-        - {
-            Id:
-              {
-                !Join [
-                  "-",
-                  [!Ref "AWS::StackName", "axiom-auto-subscription-rule"],
-                ],
-              },
-            Arn: { !GetAtt ["AxiomCloudWatchLogsSubscriber", "Arn"] },
-          }
+        - Id: !Join [
+                "-",
+                [!Ref "AWS::StackName", "axiom-auto-subscription-rule"]
+              ]
+          Arn: { !GetAtt ["AxiomCloudWatchLogsSubscriber", "Arn"] }
   AxiomCloudWatchLogsSubscriberPolicy:
     Type: AWS::IAM::Policy
     Properties:
