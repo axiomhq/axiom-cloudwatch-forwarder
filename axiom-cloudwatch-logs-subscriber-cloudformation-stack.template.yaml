@@ -107,7 +107,7 @@ Resources:
                 "-",
                 [!Ref "AWS::StackName", "axiom-auto-subscription-rule"]
               ]
-          Arn: { !GetAtt ["AxiomCloudWatchLogsSubscriber", "Arn"] }
+          Arn: !GetAtt ["AxiomCloudWatchLogsSubscriber", "Arn"]
   AxiomCloudWatchLogsSubscriberPolicy:
     Type: AWS::IAM::Policy
     Properties:
