@@ -17,7 +17,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: BucketOwnerFullControl
-      BucketName: !Join [ "-", [ !Ref AWS::StackName, "axiom", "cloudtrail" ] ]
+      BucketName: !Join ["-", [!Ref AWS::StackName, "axiom", "cloudtrail"]]
   AxiomCloudWatchLogsSubscriberS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     DependsOn: AxiomCloudWatchLogsSubscriberS3Bucket
@@ -25,32 +25,39 @@ Resources:
       Bucket: !Ref AxiomCloudWatchLogsSubscriberS3Bucket
       PolicyDocument:
         {
-          "Version" : "2012-10-17",
-          "Statement" : [
-            {
-              "Sid" : "AWSCloudTrailAclCheck20150319",
-              "Effect" : "Allow",
-              "Principal" : {
-                "Service" : "cloudtrail.amazonaws.com"
+          "Version": "2012-10-17",
+          "Statement":
+            [
+              {
+                "Sid": "AWSCloudTrailAclCheck20150319",
+                "Effect": "Allow",
+                "Principal": { "Service": "cloudtrail.amazonaws.com" },
+                "Action": "s3:GetBucketAcl",
+                "Resource":
+                  !GetAtt ["AxiomCloudWatchLogsSubscriberS3Bucket", "Arn"],
               },
-              "Action" : "s3:GetBucketAcl",
-              "Resource" : !GetAtt [ "AxiomCloudWatchLogsSubscriberS3Bucket", "Arn" ]
-            },
-            {
-              "Sid" : "AWSCloudTrailWrite20150319",
-              "Effect" : "Allow",
-              "Principal" : {
-                "Service" : "cloudtrail.amazonaws.com"
+              {
+                "Sid": "AWSCloudTrailWrite20150319",
+                "Effect": "Allow",
+                "Principal": { "Service": "cloudtrail.amazonaws.com" },
+                "Action": "s3:PutObject",
+                "Resource":
+                  !Join [
+                    "",
+                    [
+                      !GetAtt ["AxiomCloudWatchLogsSubscriberS3Bucket", "Arn"],
+                      "/AWSLogs/",
+                      { "Ref": "AWS::AccountId" },
+                      "/*",
+                    ],
+                  ],
+                "Condition":
+                  {
+                    "StringEquals":
+                      { "s3:x-amz-acl": "bucket-owner-full-control" },
+                  },
               },
-              "Action" : "s3:PutObject",
-              "Resource" : {
-                !Join [ "", [ !GetAtt [ "AxiomCloudWatchLogsSubscriberS3Bucket", "Arn" ], "/AWSLogs/", { "Ref" : "AWS::AccountId" }, "/*" ] ]
-              },
-              "Condition" : {
-                "StringEquals" : { "s3:x-amz-acl" : "bucket-owner-full-control" }
-              }
-            }
-          ]
+            ],
         }
   AxiomLogsSubscriberCloudTrail:
     Type: AWS::CloudTrail::Trail
@@ -78,10 +85,8 @@ Resources:
         "Fn::Join":
           ["-", [{ "Ref": "AWS::StackName" }, "axiom-auto-subscription-rule"]]
       Targets:
-        - Id: !Join [
-                "-",
-                [!Ref "AWS::StackName", "axiom-auto-subscription-rule"]
-              ]
+        - Id:
+            !Join ["-", [!Ref "AWS::StackName", "axiom-auto-subscription-rule"]]
           Arn: !GetAtt ["AxiomCloudWatchLogsSubscriber", "Arn"]
   AxiomCloudWatchLogsSubscriberPolicy:
     Type: AWS::IAM::Policy
@@ -131,3 +136,23 @@ Resources:
         Variables:
           AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN: !Ref "AxiomCloudWatchLambdaIngesterARN"
           LOG_GROUP_PREFIX: !Ref "CloudWatchLogGroupsPrefix"
+  AxiomCloudWatchLogsSubscriberPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: { "Fn::GetAtt": ["AxiomCloudWatchLogsSubscriber", "Arn"] }
+      Principal: "events.amazonaws.com"
+      SourceAccount:
+        Ref: AWS::AccountId
+      SourceArn": !GetAtt ["AxiomLogsSubscriberEventRule", "Arn"]
+  LogScaleCloudWatchLogsSubscriberLogGroup:
+    DependsOn: ["AxiomCloudWatchSubscriberRole"]
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        !Join [
+          "",
+          ["/aws/lambda/", { "Ref": "LogScaleCloudWatchLogsSubscriber" }],
+        ]
+      RetentionInDays:
+        Ref: "AxiomLambdaLogRetention"
