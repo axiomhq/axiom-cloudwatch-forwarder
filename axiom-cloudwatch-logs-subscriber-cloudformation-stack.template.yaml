@@ -1,3 +1,4 @@
+Description: A lambda function to auto subscribe Axiom Forwarder to new CloudWatch Log Groups.
 Parameters:
   LambdaFunctionName:
     Type: String
@@ -12,6 +13,10 @@ Parameters:
     Type: String
     Description: The Prefix of cloudwatch log groups to subscribe to the AWS Lambda ingester.
     Default: "" # all
+  AxiomLambdaLogRetention:
+    Type: "Number"
+    Description: "The number of days to retain CloudWatch logs for the created lambda functions."
+    Default: 1
 Resources:
   AxiomCloudWatchLogsSubscriberS3Bucket:
     Type: AWS::S3::Bucket
@@ -145,14 +150,14 @@ Resources:
       SourceAccount:
         Ref: AWS::AccountId
       SourceArn": !GetAtt ["AxiomLogsSubscriberEventRule", "Arn"]
-  LogScaleCloudWatchLogsSubscriberLogGroup:
-    DependsOn: ["AxiomCloudWatchSubscriberRole"]
+  AxiomCloudWatchLogsSubscriberLogGroup:
+    DependsOn: ["AxiomCloudWatchLogsSubscriberRole"]
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName:
         !Join [
           "",
-          ["/aws/lambda/", { "Ref": "LogScaleCloudWatchLogsSubscriber" }],
+          ["/aws/lambda/", { "Ref": "AxiomCloudWatchLogsSubscriber" }],
         ]
       RetentionInDays:
         Ref: "AxiomLambdaLogRetention"
