@@ -14,7 +14,8 @@ logs from your CloudWatch to [Axiom](https://axiom.co).
 
 # Logs Subscriber architecture
 
-- Creates a CloudTrail trail to capture creation of new LogGroups
-- 
+- Creates an S3 bucket for Cloudtrail
+- Creates a Trail to capture creation of new LogGroups
+- Creates an Event Rule to pass those creation events to event bus
 - EventBridge sends an event to a Lambda function when a new LogGroup is created
 - Lambda function creates a subscription filter for the new LogGroup
