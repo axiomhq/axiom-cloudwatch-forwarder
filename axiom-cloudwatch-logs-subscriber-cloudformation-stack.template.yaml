@@ -34,9 +34,7 @@ Resources:
                 "Service" : "cloudtrail.amazonaws.com"
               },
               "Action" : "s3:GetBucketAcl",
-              "Resource" : {
-                "Fn::GetAtt" : [ "AxiomCloudWatchLogsSubscriberS3Bucket", "Arn" ]
-              }
+              "Resource" : !GetAtt [ "AxiomCloudWatchLogsSubscriberS3Bucket", "Arn" ]
             },
             {
               "Sid" : "AWSCloudTrailWrite20150319",
@@ -46,7 +44,7 @@ Resources:
               },
               "Action" : "s3:PutObject",
               "Resource" : {
-                "Fn::Join" : [ "", [ { "Fn::GetAtt" : [ "AxiomCloudWatchLogsSubscriberS3Bucket", "Arn" ] }, "/AWSLogs/", { "Ref" : "AWS::AccountId" }, "/*" ] ]
+                !Join [ "", [ !GetAtt [ "AxiomCloudWatchLogsSubscriberS3Bucket", "Arn" ], "/AWSLogs/", { "Ref" : "AWS::AccountId" }, "/*" ] ]
               },
               "Condition" : {
                 "StringEquals" : { "s3:x-amz-acl" : "bucket-owner-full-control" }
@@ -59,7 +57,7 @@ Resources:
     DependsOn: AxiomCloudWatchLogsSubscriberS3BucketPolicy
     Properties:
       EnableLogFileValidation: false
-      IncludeGlobalServiceEvents: false
+      IncludeGlobalServiceEvents: true
       IsMultiRegionTrail: true
       IsLogging: true
       S3BucketName: !Join ["-", [!Ref AWS::StackName, "axiom", "cloudtrail"]]
