@@ -149,7 +149,7 @@ Resources:
       Principal: "events.amazonaws.com"
       SourceAccount:
         Ref: AWS::AccountId
-      SourceArn": !GetAtt ["AxiomLogsSubscriberEventRule", "Arn"]
+      SourceArn: !GetAtt ["AxiomLogsSubscriberEventRule", "Arn"]
   AxiomCloudWatchLogsSubscriberLogGroup:
     DependsOn: ["AxiomCloudWatchLogsSubscriberRole"]
     Type: AWS::Logs::LogGroup
