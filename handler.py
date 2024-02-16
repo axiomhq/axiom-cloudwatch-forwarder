@@ -39,7 +39,7 @@ report_matcher = re.compile(
 
 
 # push events to axiom
-axiom_url = os.getenv("AXIOM_URL", "https://cloud.axiom.co").strip("/")
+axiom_url = os.getenv("AXIOM_URL", "https://api.axiom.co").strip("/")
 axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
 disable_json = os.getenv("DISABLE_JSON", "false") == "true"
@@ -67,7 +67,7 @@ def push_events_to_axiom(events: list):
     if len(events) == 0:
         return
 
-    url = f"{axiom_url}/api/v1/datasets/{axiom_dataset}/ingest"
+    url = f"{axiom_url}/v1/datasets/{axiom_dataset}/ingest"
     data = json.dumps(events)
     req = urllib.request.Request(
         url,

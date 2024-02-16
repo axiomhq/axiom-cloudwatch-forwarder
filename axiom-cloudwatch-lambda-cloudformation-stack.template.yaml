@@ -6,9 +6,9 @@ Parameters:
     AllowedPattern: "^(xaat-|xait-).*"
   AxiomURL:
     Type: String
-    Default: "https://cloud.axiom.co"
+    Default: "https://api.axiom.co"
     AllowedPattern: ".+" # required
-    Description: The URL of Axiom endpoint (without trailing /). Defaults to "https://cloud.axiom.co".
+    Description: The URL of Axiom endpoint (without trailing /). Defaults to "https://api.axiom.co".
   AxiomDataset:
     Type: String
     Description: The Name of the Dataset in Axiom to push events to.
