@@ -39,7 +39,7 @@ report_matcher = re.compile(
 
 
 # push events to axiom
-axiom_url = os.getenv("AXIOM_URL", "https://cloud.axiom.co").strip("/")
+axiom_url = os.getenv("AXIOM_URL", "https://api.axiom.co").strip("/")
 axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
 disable_json = os.getenv("DISABLE_JSON", "false") == "true"
