@@ -41,15 +41,15 @@ def lambda_handler(event, context):
     )
 
     # Check whether the prefix is set - the prefix is used to determine which logs we want.
-    if not log_group_prefix:
+    # or whether the log group's name starts with the set prefix.
+    if not log_group_prefix or log_group_name.startswith(log_group_prefix):
         create_subscription_filter(
             log_group_name, log_group_arn, axiom_cloudwatch_lambda_ingester_arn
         )
 
-        # Check whether the log group's name starts with the set prefix.
-    elif log_group_name.startswith(log_group_prefix):
-        create_subscription_filter(
-            log_group_name, log_group_arn, axiom_cloudwatch_lambda_ingester_arn
+    else:
+        print(
+            f"log group ({log_group_name}) did not match the prefix ({log_group_prefix})"
         )
 
 
