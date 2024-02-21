@@ -44,6 +44,7 @@ axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
 disable_json = os.getenv("DISABLE_JSON", "false") == "true"
 data_tags_string = os.getenv("DATA_TAGS")
+data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
 data_tags = {}
 if data_tags_string != "":
@@ -123,9 +124,16 @@ def split_log_group(log_group: str):
     pattern_obj = re.compile("^/aws/(lambda|apigateway|eks|rds)/(.*)")
     parsed = pattern_obj.match(log_group)
     if parsed is None:
-        return {"serviceName": "unknown", "logGroupName": log_group}
+        return {
+            "serviceName": data_service_name
+            if data_service_name is not None
+            else "unknown",
+            "logGroupName": log_group,
+        }
 
-    service_name = parsed.group(1)
+    service_name = (
+        data_service_name if data_service_name is not None else parsed.group(1)
+    )
     log_group_name = parsed.group(2)
 
     return {
