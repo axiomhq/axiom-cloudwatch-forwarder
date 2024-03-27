@@ -125,9 +125,9 @@ def split_log_group(log_group: str):
     parsed = pattern_obj.match(log_group)
     if parsed is None:
         return {
-            "serviceName": data_service_name
-            if data_service_name is not None
-            else "unknown",
+            "serviceName": (
+                data_service_name if data_service_name is not None else "unknown"
+            ),
             "logGroupName": log_group,
         }
 
