@@ -2,7 +2,7 @@ Parameters:
   LambdaFunctionName:
     Type: String
     Description: Name of the AWS Lambda Function.
-    Default: axiom-cloudwatch-backfiller-lambda
+    Default: cloudwatch-backfiller-axiom
     AllowedPattern: ".+" # required
   AxiomCloudWatchLambdaIngesterARN:
     Type: String
