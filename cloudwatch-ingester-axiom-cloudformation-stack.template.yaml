@@ -20,7 +20,7 @@ Parameters:
   LambdaFunctionName:
     Type: String
     Description: Name of the AWS Lambda Function.
-    Default: axiom-cloudwatch-lambda
+    Default: cloudwatch-ingester-axiom
     AllowedPattern: ".+" # required
   DataTags:
     Type: String

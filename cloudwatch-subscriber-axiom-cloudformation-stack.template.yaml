@@ -3,7 +3,7 @@ Parameters:
   LambdaFunctionName:
     Type: String
     Description: Name of the AWS Lambda Function.
-    Default: axiom-cloudwatch-logs-subscriber-lambda
+    Default: cloudwatch-subscriber-axiom
     AllowedPattern: ".+" # required
   AxiomCloudWatchLambdaIngesterARN:
     Type: String
@@ -22,7 +22,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: BucketOwnerFullControl
-      BucketName: !Join ["-", [!Ref AWS::StackName, "axiom", "cloudtrail"]]
+      BucketName: !Join ["-", [!Ref AWS::StackName, "cloudtrail"]]
   AxiomCloudWatchLogsSubscriberS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     DependsOn: AxiomCloudWatchLogsSubscriberS3Bucket
