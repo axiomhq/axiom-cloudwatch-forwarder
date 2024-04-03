@@ -16,7 +16,7 @@ Parameters:
   CloudWatchLogGroupName:
     Type: String
     Description: The name of the AWS Cloudwatch Log Group to subscribe to.
-    AllowedPattern: ".+" # required
+    AllowedPattern: ".*" # optional
   LambdaFunctionName:
     Type: String
     Description: Name of the AWS Lambda Function.
@@ -32,15 +32,24 @@ Parameters:
       - false
     Default: false
     Description: Whether or not disable json logs. defaults to false.
+Conditions:
+  HasCloudWatchLogGroupName: !Not
+    - !Equals
+    - ''
+    - !Ref CloudWatchLogGroupName
 Resources:
   LogGroupSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
+    Conditions: HasCloudWatchLogGroupName
     Properties:
       DestinationArn: !GetAtt
         - LogsLambda
         - Arn
       FilterPattern: ""
-      LogGroupName: !Ref 'CloudWatchLogGroupName'
+      LogGroupName: !If
+        - HasCloudWatchLogGroupName
+        - !Ref CloudWatchLogGroupName
+        - !Ref AWS::NoValue
   LogsRole:
     Type: AWS::IAM::Role
     Properties:
@@ -90,3 +99,7 @@ Resources:
         - AccountID: !Ref 'AWS::AccountId'
           Region: !Ref 'AWS::Region'
           LogGroupName: !Ref 'CloudWatchLogGroupName'
+Outputs:
+  LogsLambdaARN:
+    Description: The ARN of the created Ingester Lambda
+    Value: !GetAtt LogsLambda.Arn
