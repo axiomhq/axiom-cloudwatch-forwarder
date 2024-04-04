@@ -19,26 +19,16 @@ log_groups_return_limit = int(os.getenv("LOG_GROUPS_LIMIT", 10))
 
 def get_log_groups(token=None):
     if token is None:
-        if log_group_prefix != "":
-            return cloudwatch_logs_client.describe_log_groups(
-                logGroupNamePrefix=log_group_prefix, limit=log_groups_return_limit
-            )
-        else:
-            return cloudwatch_logs_client.describe_log_groups(
-                limit=log_groups_return_limit
-            )
+        return cloudwatch_logs_client.describe_log_groups(
+            logGroupNamePrefix=log_group_prefix, limit=log_groups_return_limit
+        )
     else:
-        if log_group_prefix != "":
-            return cloudwatch_logs_client.describe_log_groups(
-                logGroupNamePrefix=log_group_prefix,
-                nextToken=token,
-                limit=log_groups_return_limit,
-            )
-        else:
-            return cloudwatch_logs_client.describe_log_groups(
-                nextToken=token,
-                limit=log_groups_return_limit,
-            )
+        return cloudwatch_logs_client.describe_log_groups(
+            logGroupNamePrefix=log_group_prefix,
+            nextToken=token,
+            limit=log_groups_return_limit,
+        )
+
 
 def delete_subscription_filter(log_group_arn, lambda_arn):
     try:
@@ -111,12 +101,9 @@ def lambda_handler(event: dict, context=None):
             except Exception:
                 pass
 
-            try:
-                create_subscription_filter(
-                    group["arn"], axiom_cloudwatch_lambda_ingester_arn
-                )
-            except cloudwatch_logs_client.exceptions.LimitExceededException as error:
-                print(error)
+            create_subscription_filter(
+                group["arn"], axiom_cloudwatch_lambda_ingester_arn
+            )
 
         if token is None:
             return
@@ -131,13 +118,7 @@ def lambda_handler(event: dict, context=None):
         log_groups()
     except Exception as e:
         responseData["success"] = "False"
-        if event["ResponseURL"]:
-            cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-        else:
-            raise e
+        cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
 
     responseData["success"] = "True"
-    if event["ResponseURL"]:
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
-    else:
-        return 'ok'
+    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
