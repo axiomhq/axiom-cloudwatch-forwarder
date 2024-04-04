@@ -72,9 +72,9 @@ Resources:
       IncludeGlobalServiceEvents: true
       IsMultiRegionTrail: true
       IsLogging: true
-      S3BucketName: !Join ["-", [!Ref AWS::StackName, "axiom", "cloudtrail"]]
+      S3BucketName: !Ref AxiomCloudWatchLogsSubscriberS3Bucket
       TrailName:
-        !Join ["-", [!Ref AWS::StackName, "axiom", { "Ref": "AWS::AccountId" }]]
+        !Join ["-", [!Ref AWS::StackName, { "Ref": "AWS::AccountId" }]]
   AxiomLogsSubscriberEventRule:
     DependsOn: AxiomCloudWatchLogsSubscriber
     Type: AWS::Events::Rule
@@ -88,10 +88,10 @@ Resources:
           eventName: ["CreateLogGroup"]
       Name:
         "Fn::Join":
-          ["-", [{ "Ref": "AWS::StackName" }, "axiom-auto-subscription-rule"]]
+          ["-", [{ "Ref": "AWS::StackName" }, "auto-subscription-rule"]]
       Targets:
         - Id:
-            !Join ["-", [!Ref "AWS::StackName", "axiom-auto-subscription-rule"]]
+            !Join ["-", [!Ref "AWS::StackName", "auto-subscription-rule"]]
           Arn: !GetAtt ["AxiomCloudWatchLogsSubscriber", "Arn"]
   AxiomCloudWatchLogsSubscriberPolicy:
     Type: AWS::IAM::Policy
@@ -106,7 +106,7 @@ Resources:
               - lambda:RemovePermission
             Effect: Allow
             Resource: "*"
-      PolicyName: axiom-cloudwatch-logs-subscriber-lambda-policy
+      PolicyName: cloudwatch-subscriber-axiom-policy
       Roles:
         - !Ref "AxiomCloudWatchLogsSubscriberRole"
   AxiomCloudWatchLogsSubscriberRole:

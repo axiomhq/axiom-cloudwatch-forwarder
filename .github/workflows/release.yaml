@@ -34,5 +34,5 @@ jobs:
         env:
           SOURCE_DIR: build
           AWS_S3_BUCKET: "axiom-cloudformation"
-          DEST_DIR: "/stacks"
+          DEST_DIR: "stacks"
         run: aws s3 sync --acl public-read ./$SOURCE_DIR s3://$AWS_S3_BUCKET/$DEST_DIR
