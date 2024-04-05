@@ -35,8 +35,8 @@ Parameters:
 Conditions:
   HasCloudWatchLogGroupName: !Not
     - !Equals
-    - ''
-    - !Ref CloudWatchLogGroupName
+      - ''
+      - !Ref CloudWatchLogGroupName
 Resources:
   LogGroupSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
