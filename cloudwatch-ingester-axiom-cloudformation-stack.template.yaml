@@ -40,7 +40,7 @@ Conditions:
 Resources:
   LogGroupSubscriptionFilter:
     Type: AWS::Logs::SubscriptionFilter
-    Conditions: HasCloudWatchLogGroupName
+    Condition: HasCloudWatchLogGroupName
     Properties:
       DestinationArn: !GetAtt
         - LogsLambda
