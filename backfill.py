@@ -19,15 +19,33 @@ log_groups_return_limit = int(os.getenv("LOG_GROUPS_LIMIT", 10))
 
 def get_log_groups(token=None):
     if token is None:
-        return cloudwatch_logs_client.describe_log_groups(
-            logGroupNamePrefix=log_group_prefix, limit=log_groups_return_limit
-        )
+        if log_group_prefix != "":
+            return cloudwatch_logs_client.describe_log_groups(
+                logGroupNamePrefix=log_group_prefix, limit=log_groups_return_limit
+            )
+        else:
+            return cloudwatch_logs_client.describe_log_groups(
+                limit=log_groups_return_limit
+            )
     else:
-        return cloudwatch_logs_client.describe_log_groups(
-            logGroupNamePrefix=log_group_prefix,
-            nextToken=token,
-            limit=log_groups_return_limit,
-        )
+        if log_group_prefix != "":
+            return cloudwatch_logs_client.describe_log_groups(
+                logGroupNamePrefix=log_group_prefix,
+                nextToken=token,
+                limit=log_groups_return_limit,
+            )
+        else:
+            return cloudwatch_logs_client.describe_log_groups(
+                nextToken=token,
+                limit=log_groups_return_limit,
+            )
+
+
+def remove_permission(lambda_arn):
+    lambda_client.remove_permission(
+        FunctionName=lambda_arn,
+        StatementId="cloudwatch-backfiller-axiom",
+    )
 
 
 def delete_subscription_filter(log_group_arn, lambda_arn):
@@ -35,11 +53,6 @@ def delete_subscription_filter(log_group_arn, lambda_arn):
         log_group_name = log_group_arn.split(":")[-2]
 
         logger.info(f"Deleting subscription filter for {log_group_name}...")
-
-        lambda_client.remove_permission(
-            FunctionName=lambda_arn,
-            StatementId="%s-axiom" % log_group_name.replace("/", "-"),
-        )
 
         cloudwatch_logs_client.delete_subscription_filter(
             logGroupName=log_group_name, filterName="%s-axiom" % log_group_name
@@ -54,17 +67,25 @@ def delete_subscription_filter(log_group_arn, lambda_arn):
         raise e
 
 
+def create_statement(region, account_id, lambda_arn):
+    logger.info(f"Creating permission for {lambda_arn}...")
+    source_arn = "arn:aws:logs:%s:%s:log-group:*:*" % (
+        region,
+        account_id,
+    )
+    lambda_client.add_permission(
+        FunctionName=lambda_arn,
+        StatementId="cloudwatch-backfiller-axiom",
+        Action="lambda:InvokeFunction",
+        Principal=f"logs.amazonaws.com",
+        SourceArn=source_arn,
+    )
+
+
 def create_subscription_filter(log_group_arn, lambda_arn):
     try:
         log_group_name = log_group_arn.split(":")[-2]
         logger.info(f"Creating subscription filter for {log_group_name}...")
-        lambda_client.add_permission(
-            FunctionName=lambda_arn,
-            StatementId="%s-axiom" % log_group_name.replace("/", "-"),
-            Action="lambda:InvokeFunction",
-            Principal=f"logs.amazonaws.com",
-            SourceArn=log_group_arn,
-        )
 
         cloudwatch_logs_client.put_subscription_filter(
             logGroupName=log_group_name,
@@ -85,6 +106,21 @@ def lambda_handler(event: dict, context=None):
     if axiom_cloudwatch_lambda_ingester_arn is None:
         raise Exception("AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN is not set")
 
+    aws_account_id = context.invoked_function_arn.split(":")[4]
+    region = os.getenv("AWS_REGION")
+
+    # create permission for lambda
+    try:
+        remove_permission(axiom_cloudwatch_lambda_ingester_arn)
+    except Exception as e:
+        logger.error(f"Error removing permission: {e}")
+
+    create_statement(region, aws_account_id, axiom_cloudwatch_lambda_ingester_arn)
+
+    ingester_lambda_group_name = (
+        "/aws/lambda/" + axiom_cloudwatch_lambda_ingester_arn.split(":")[-1]
+    )
+
     def log_groups(token=None):
         groups_response = get_log_groups(token)
         groups = groups_response["logGroups"]
@@ -94,16 +130,28 @@ def lambda_handler(event: dict, context=None):
             return
 
         for group in groups:
+            # skip the ingester lambda log group to avoid circular logging
+            if group["logGroupName"] == ingester_lambda_group_name:
+                continue
+
             try:
                 delete_subscription_filter(
-                    group["arn"], axiom_cloudwatch_lambda_ingester_arn
+                    region, aws_account_id, axiom_cloudwatch_lambda_ingester_arn
                 )
             except Exception:
                 pass
 
-            create_subscription_filter(
-                group["arn"], axiom_cloudwatch_lambda_ingester_arn
-            )
+            try:
+                create_subscription_filter(
+                    group["arn"], axiom_cloudwatch_lambda_ingester_arn
+                )
+            except cloudwatch_logs_client.exceptions.LimitExceededException as error:
+                logger.error(
+                    "failed to create subscription filter for: %s"
+                    % group["logGroupName"]
+                )
+                logger.error(error)
+                continue
 
         if token is None:
             return
@@ -118,7 +166,13 @@ def lambda_handler(event: dict, context=None):
         log_groups()
     except Exception as e:
         responseData["success"] = "False"
-        cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+        if "ResponseURL" in event:
+            cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+        else:
+            raise e
 
     responseData["success"] = "True"
-    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+    if "ResponseURL" in event:
+        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+    else:
+        return "ok"
