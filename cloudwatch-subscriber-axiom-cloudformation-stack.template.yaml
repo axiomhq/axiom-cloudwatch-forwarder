@@ -104,6 +104,12 @@ Resources:
               - logs:DescribeLogGroups
               - lambda:AddPermission
               - lambda:RemovePermission
+              - lambda:InvokeFunction
+              - lambda:GetFunction
+              - logs:DescribeLogStreams
+              - logs:DescribeSubscriptionFilters
+              - logs:FilterLogEvents
+              - logs:GetLogEvents
             Effect: Allow
             Resource: "*"
       PolicyName: cloudwatch-subscriber-axiom-policy
@@ -120,6 +126,7 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
+                - logs.amazonaws.com
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   AxiomCloudWatchLogsSubscriber:
