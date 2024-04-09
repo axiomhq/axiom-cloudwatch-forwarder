@@ -48,6 +48,7 @@ Resources:
       FunctionName: !Ref LambdaFunctionName
       Runtime: python3.9
       Handler: index.lambda_handler
+      Timeout: 300
       Code:
         ZipFile: |
           # DO NOT EDIT
