@@ -17,14 +17,23 @@ Parameters:
     Type: "Number"
     Description: "The number of days to retain CloudWatch logs for the created lambda functions."
     Default: 1
+  EnableCloudTrail:
+    Description: "Enable Cloudtrail for cloudwatch CreateLogGroup event notification? If already enabled, choose 'false'"
+    Default: true
+    Type: String
+    AllowedValues: [true, false]
+Conditions:
+  ShouldEnableCloudTrail: !Equals [true, !Ref EnableCloudTrail]
 Resources:
   AxiomCloudWatchLogsSubscriberS3Bucket:
+    Condition: ShouldEnableCloudTrail
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: BucketOwnerFullControl
       BucketName: !Join ["-", [!Ref AWS::StackName, "cloudtrail"]]
   AxiomCloudWatchLogsSubscriberS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: ShouldEnableCloudTrail
     DependsOn: AxiomCloudWatchLogsSubscriberS3Bucket
     Properties:
       Bucket: !Ref AxiomCloudWatchLogsSubscriberS3Bucket
@@ -66,6 +75,7 @@ Resources:
         }
   AxiomLogsSubscriberCloudTrail:
     Type: AWS::CloudTrail::Trail
+    Condition: ShouldEnableCloudTrail
     DependsOn: AxiomCloudWatchLogsSubscriberS3BucketPolicy
     Properties:
       EnableLogFileValidation: false
@@ -73,8 +83,7 @@ Resources:
       IsMultiRegionTrail: true
       IsLogging: true
       S3BucketName: !Ref AxiomCloudWatchLogsSubscriberS3Bucket
-      TrailName:
-        !Join ["-", [!Ref AWS::StackName, { "Ref": "AWS::AccountId" }]]
+      TrailName: !Join ["-", [!Ref AWS::StackName, { "Ref": "AWS::AccountId" }]]
   AxiomLogsSubscriberEventRule:
     DependsOn: AxiomCloudWatchLogsSubscriber
     Type: AWS::Events::Rule
@@ -90,8 +99,7 @@ Resources:
         "Fn::Join":
           ["-", [{ "Ref": "AWS::StackName" }, "auto-subscription-rule"]]
       Targets:
-        - Id:
-            !Join ["-", [!Ref "AWS::StackName", "auto-subscription-rule"]]
+        - Id: !Join ["-", [!Ref "AWS::StackName", "auto-subscription-rule"]]
           Arn: !GetAtt ["AxiomCloudWatchLogsSubscriber", "Arn"]
   AxiomCloudWatchLogsSubscriberPolicy:
     Type: AWS::IAM::Policy
@@ -134,6 +142,7 @@ Resources:
     DependsOn:
       - AxiomCloudWatchLogsSubscriberRole
     Properties:
+      FunctionName: !Ref LambdaFunctionName
       Runtime: python3.9
       Handler: index.lambda_handler
       Code:
@@ -162,9 +171,6 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName:
-        !Join [
-          "",
-          ["/aws/lambda/", { "Ref": "AxiomCloudWatchLogsSubscriber" }],
-        ]
+        !Join ["", ["/aws/lambda/", { "Ref": "AxiomCloudWatchLogsSubscriber" }]]
       RetentionInDays:
         Ref: "AxiomLambdaLogRetention"
