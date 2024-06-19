@@ -1,3 +1,5 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: "AWS::LanguageExtensions"
 Parameters:
   AxiomToken:
     Description: The Token of User in Axiom. Must start with xaat- or xait-.
@@ -13,9 +15,9 @@ Parameters:
     Type: String
     Description: The Name of the Dataset in Axiom to push events to.
     AllowedPattern: ".+" # required
-  CloudWatchLogGroupName:
-    Type: String
-    Description: The name of the AWS Cloudwatch Log Group to subscribe to.
+  CloudWatchLogGroupNames:
+    Type: CommaDelimitedList
+    Description: The names of the AWS Cloudwatch Log Groups to subscribe to. Comma Seperated string of cloudwatch log group names.
     AllowedPattern: ".*" # optional
   LambdaFunctionName:
     Type: String
@@ -35,34 +37,34 @@ Parameters:
 Conditions:
   HasCloudWatchLogGroupName: !Not
     - !Equals
-      - ''
-      - !Ref CloudWatchLogGroupName
+      - !Join ["", !Ref CloudWatchLogGroupNames]
+      - ""
 Resources:
-  LogGroupSubscriptionFilter:
-    Type: AWS::Logs::SubscriptionFilter
-    Condition: HasCloudWatchLogGroupName
-    Properties:
-      DestinationArn: !GetAtt
-        - LogsLambda
-        - Arn
-      FilterPattern: ""
-      LogGroupName: !If
-        - HasCloudWatchLogGroupName
-        - !Ref CloudWatchLogGroupName
-        - !Ref AWS::NoValue
+  "Fn::ForEach::SubscriptionFilters":
+    - groupName
+    - !Ref CloudWatchLogGroupNames
+    - "lgsf&{groupName}":
+        Type: AWS::Logs::SubscriptionFilter
+        Condition: HasCloudWatchLogGroupName
+        Properties:
+          DestinationArn: !GetAtt
+            - LogsLambda
+            - Arn
+          FilterPattern: ""
+          LogGroupName: !Ref groupName
   LogsRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Statement:
           - Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
             Effect: Allow
             Principal:
               Service:
                 - lambda.amazonaws.com
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   LogsLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -78,27 +80,31 @@ Resources:
         - Arn
       Environment:
         Variables:
-          AXIOM_TOKEN: !Ref 'AxiomToken'
-          AXIOM_DATASET: !Ref 'AxiomDataset'
-          AXIOM_URL: !Ref 'AxiomURL'
+          AXIOM_TOKEN: !Ref "AxiomToken"
+          AXIOM_DATASET: !Ref "AxiomDataset"
+          AXIOM_URL: !Ref "AxiomURL"
           DISABLE_JSON: !Ref DisableJSON
           DATA_TAGS: !Ref DataTags
-  LogsLambdaPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - LogsLambda
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref 'LogsLambda'
-      Principal: !Sub
-        - 'logs.${Region}.amazonaws.com'
-        - Region: !Ref 'AWS::Region'
-      SourceAccount: !Ref 'AWS::AccountId'
-      SourceArn: !Sub
-        - 'arn:aws:logs:${Region}:${AccountID}:log-group:${LogGroupName}:*'
-        - AccountID: !Ref 'AWS::AccountId'
-          Region: !Ref 'AWS::Region'
-          LogGroupName: !Ref 'CloudWatchLogGroupName'
+  "Fn::ForEach::LambdaPermissions":
+    - groupName
+    - !Ref CloudWatchLogGroupNames
+    - "LogsLambdaPermission&{groupName}":
+        Type: AWS::Lambda::Permission
+        Condition: HasCloudWatchLogGroupName
+        DependsOn:
+          - LogsLambda
+        Properties:
+          Action: lambda:InvokeFunction
+          FunctionName: !Ref "LogsLambda"
+          Principal: !Sub
+            - "logs.${Region}.amazonaws.com"
+            - Region: !Ref "AWS::Region"
+          SourceAccount: !Ref "AWS::AccountId"
+          SourceArn: !Sub
+            - "arn:aws:logs:${Region}:${AccountID}:log-group:${LogGroupName}:*"
+            - AccountID: !Ref "AWS::AccountId"
+              Region: !Ref "AWS::Region"
+              LogGroupName: !Ref groupName
 Outputs:
   LogsLambdaARN:
     Description: The ARN of the created Ingester Lambda
