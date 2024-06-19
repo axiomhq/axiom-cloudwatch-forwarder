@@ -41,9 +41,9 @@ Conditions:
       - ""
 Resources:
   "Fn::ForEach::SubscriptionFilters":
-    - groupName
+    - GroupName
     - !Ref CloudWatchLogGroupNames
-    - "lgsf&{groupName}":
+    - "LGSF&{GroupName}":
         Type: AWS::Logs::SubscriptionFilter
         Condition: HasCloudWatchLogGroupNames
         Properties:
@@ -51,7 +51,7 @@ Resources:
             - LogsLambda
             - Arn
           FilterPattern: ""
-          LogGroupName: !Ref groupName
+          LogGroupName: !Ref GroupName
   LogsRole:
     Type: AWS::IAM::Role
     Properties:
@@ -86,9 +86,9 @@ Resources:
           DISABLE_JSON: !Ref DisableJSON
           DATA_TAGS: !Ref DataTags
   "Fn::ForEach::LambdaPermissions":
-    - groupName
+    - GroupName
     - !Ref CloudWatchLogGroupNames
-    - "LogsLambdaPermission&{groupName}":
+    - "LogsLambdaPermission&{GroupName}":
         Type: AWS::Lambda::Permission
         Condition: HasCloudWatchLogGroupNames
         DependsOn:
@@ -104,7 +104,7 @@ Resources:
             - "arn:aws:logs:${Region}:${AccountID}:log-group:${LogGroupName}:*"
             - AccountID: !Ref "AWS::AccountId"
               Region: !Ref "AWS::Region"
-              LogGroupName: !Ref groupName
+              LogGroupName: !Ref GroupName
 Outputs:
   LogsLambdaARN:
     Description: The ARN of the created Ingester Lambda
