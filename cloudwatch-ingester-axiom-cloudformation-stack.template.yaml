@@ -35,7 +35,7 @@ Parameters:
     Default: false
     Description: Whether or not disable json logs. defaults to false.
 Conditions:
-  HasCloudWatchLogGroupName: !Not
+  HasCloudWatchLogGroupNames: !Not
     - !Equals
       - !Join ["", !Ref CloudWatchLogGroupNames]
       - ""
@@ -45,7 +45,7 @@ Resources:
     - !Ref CloudWatchLogGroupNames
     - "lgsf&{groupName}":
         Type: AWS::Logs::SubscriptionFilter
-        Condition: HasCloudWatchLogGroupName
+        Condition: HasCloudWatchLogGroupNames
         Properties:
           DestinationArn: !GetAtt
             - LogsLambda
@@ -90,7 +90,7 @@ Resources:
     - !Ref CloudWatchLogGroupNames
     - "LogsLambdaPermission&{groupName}":
         Type: AWS::Lambda::Permission
-        Condition: HasCloudWatchLogGroupName
+        Condition: HasCloudWatchLogGroupNames
         DependsOn:
           - LogsLambda
         Properties:
