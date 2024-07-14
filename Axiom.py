@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_events as events,
     aws_events_targets as targets,
     aws_cloudtrail as cloudtrail,
+    custom_resources as cr
 )
 import aws_cdk as core
 from constructs import Construct
@@ -136,6 +137,23 @@ class CloudWatchBackfiller(Construct):
             value=backfiller_lambda.function_arn,
             export_name=f"{id}-BackfillerLambdaARN",
         )
+
+        backfiller_lambda_provider = cr.Provider(
+            self,
+            "BackfillerLambdaProvider",
+            on_event_handler=backfiller_lambda
+        )
+
+        custom_resource = core.CustomResource(
+            self,
+            "BackfillerTrigger",
+            service_token=backfiller_lambda_provider.service_token,
+            properties={
+                "DummyProperty": "TriggerLambda"
+            }
+        )
+
+        custom_resource.node.add_dependency(backfiller_lambda)
 
 
 class CloudWatchSubscriber(Construct):
