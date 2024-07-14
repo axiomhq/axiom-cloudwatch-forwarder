@@ -32,7 +32,7 @@ class CloudWatchIngester(Construct):
             runtime=lambda_.Runtime.PYTHON_3_9,
             handler="handler.lambda_handler",
             code=lambda_.Code.from_asset(
-                "../", exclude=["cdk", "*.yaml", "cdk.out", ".venv"]
+                "./", exclude=["cdk", "*.yaml", "cdk.out", ".venv"]
             ),
             environment={
                 "AXIOM_TOKEN": axiom_token,
@@ -119,7 +119,7 @@ class CloudWatchBackfiller(Construct):
             runtime=lambda_.Runtime.PYTHON_3_9,
             handler="backfill.lambda_handler",
             code=lambda_.Code.from_asset(
-                "../", exclude=["cdk", "*.yaml", "cdk.out", ".venv"]
+                "./", exclude=["cdk", "*.yaml", "cdk.out", ".venv"]
             ),
             role=backfiller_role,
             timeout=core.Duration.minutes(5),
@@ -236,7 +236,7 @@ class CloudWatchSubscriber(Construct):
             runtime=lambda_.Runtime.PYTHON_3_9,
             handler="logs_subscriber.lambda_handler",
             code=lambda_.Code.from_asset(
-                "../", exclude=["cdk", "*.yaml", "cdk.out", ".venv"]
+                "./", exclude=["cdk", "*.yaml", "cdk.out", ".venv"]
             ),
             role=subscriber_role,
             environment={
