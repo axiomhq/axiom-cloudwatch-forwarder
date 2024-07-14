@@ -1,7 +1,9 @@
 import boto3
 import os
 import logging
-import cfnresponse
+import http.client
+from urllib.parse import urlparse
+import json
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -9,6 +11,30 @@ logger = logging.getLogger()
 logger.setLevel(level)
 
 
+def send_response(event, context, response_status, response_data):
+    response_body = json.dumps({
+        "Status": response_status,
+        "Reason": "See the details in CloudWatch Log Stream: " + context.log_stream_name,
+        "PhysicalResourceId": context.log_stream_name or context.aws_request_id,
+        "StackId": event['StackId'],
+        "RequestId": event['RequestId'],
+        "LogicalResourceId": event['LogicalResourceId'],
+        "Data": response_data
+    })
+
+    parsed_url = urlparse(event['ResponseURL'])
+    if parsed_url.scheme == 'https':
+        conn = http.client.HTTPSConnection(parsed_url.hostname)
+    else:
+        conn = http.client.HTTPConnection(parsed_url.hostname)
+    
+    conn.request("PUT", parsed_url.path + "?" + parsed_url.query, body=response_body, headers={"Content-Type": ""})
+
+    response = conn.getresponse()
+    if response.status < 200 or response.status >= 300:
+        raise Exception(f"Failed to send response to CloudFormation. HTTP status code: {response.status}")
+    conn.close()
+    
 cloudwatch_logs_client = boto3.client("logs")
 lambda_client = boto3.client("lambda")
 
@@ -167,12 +193,12 @@ def lambda_handler(event: dict, context=None):
     except Exception as e:
         responseData["success"] = "False"
         if "ResponseURL" in event:
-            cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+            send_response(event, context, "FAILED", responseData)
         else:
             raise e
 
     responseData["success"] = "True"
     if "ResponseURL" in event:
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+        send_response(event, context, "SUCCESS", responseData)
     else:
         return "ok"
