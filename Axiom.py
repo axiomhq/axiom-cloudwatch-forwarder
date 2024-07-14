@@ -138,23 +138,6 @@ class CloudWatchBackfiller(Construct):
             export_name=f"{id}-BackfillerLambdaARN",
         )
 
-        backfiller_lambda_provider = cr.Provider(
-            self,
-            "BackfillerLambdaProvider",
-            on_event_handler=backfiller_lambda
-        )
-
-        custom_resource = core.CustomResource(
-            self,
-            "BackfillerTrigger",
-            service_token=backfiller_lambda_provider.service_token,
-            properties={
-                "DummyProperty": "TriggerLambda"
-            }
-        )
-
-        custom_resource.node.add_dependency(backfiller_lambda)
-
 
 class CloudWatchSubscriber(Construct):
     def __init__(
