@@ -79,6 +79,7 @@ class CloudWatchBackfiller(Construct):
         id: str,
         axiom_cloudwatch_lambda_ingester_arn: str,
         cloudwatch_log_groups_prefix: str,
+        log_groups_limit: int,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -127,6 +128,7 @@ class CloudWatchBackfiller(Construct):
             environment={
                 "AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN": axiom_cloudwatch_lambda_ingester_arn,
                 "LOG_GROUP_PREFIX": cloudwatch_log_groups_prefix,
+                "LOG_GROUPS_LIMIT": log_groups_limit,
             },
         )
 
@@ -292,6 +294,7 @@ class AxiomStack(core.Stack):
         disable_json: str,
         cloudwatch_log_groups_prefix: str,
         enable_cloudtrail: bool,
+        log_groups_limit: int,
         **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
@@ -311,6 +314,7 @@ class AxiomStack(core.Stack):
             "CloudWatchBackfiller",
             axiom_cloudwatch_lambda_ingester_arn=ingester.arn,
             cloudwatch_log_groups_prefix=cloudwatch_log_groups_prefix,
+            log_groups_limit=log_groups_limit,
         )
 
         subscriber = CloudWatchSubscriber(
