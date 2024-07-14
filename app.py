@@ -30,6 +30,7 @@ AxiomStack(app, "AxiomStack",
     disable_json="false",  # Whether to disable JSON parsing
     cloudwatch_log_groups_prefix="",  # Prefix for CloudWatch log groups
     enable_cloudtrail=False,  # Whether to enable CloudTrail logs ingestion
+    log_groups_limit=1000,  # Limit of log groups to ingest
     env=cdk.Environment(account=account, region=region)  # Environment configuration for the CDK app
 )
 
