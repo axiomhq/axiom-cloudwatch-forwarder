@@ -25,14 +25,10 @@ AxiomStack(app, "AxiomStack",
     axiom_token=os.environ.get("AXIOM_KEY"),  # Axiom API token for authentication
     axiom_url="https://api.axiom.co",  # URL to Axiom API
     axiom_dataset=dataset,  # Dataset name in Axiom
-    cloudwatch_log_group_names=[""],  # Names of CloudWatch log groups to ingest
-    ingester_lambda_function_name="cloudwatch-ingester-axiom",  # Name of the Lambda function for ingesting logs
-    backfiller_lambda_function_name="cloudwatch-backfiller-axiom",  # Name of the Lambda function for backfilling logs
-    subscriber_lambda_function_name="cloudwatch-subscriber-axiom",  # Name of the Lambda function for subscribing to log events
+    cloudwatch_log_group_names=[],  # Names of CloudWatch log groups to ingest
     data_tags="",  # Tags to add to the data
     disable_json="false",  # Whether to disable JSON parsing
     cloudwatch_log_groups_prefix="",  # Prefix for CloudWatch log groups
-    axiom_lambda_log_retention=1,  # Log retention period for Lambda functions in days
     enable_cloudtrail=False,  # Whether to enable CloudTrail logs ingestion
     env=cdk.Environment(account=account, region=region)  # Environment configuration for the CDK app
 )
