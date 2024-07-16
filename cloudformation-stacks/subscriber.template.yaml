@@ -1,19 +1,19 @@
 Parameters:
   LambdaFunctionName:
     Type: String
-    Description: Name of the AWS Lambda Function.
-    Default: cloudwatch-backfiller-axiom
+    Description: Name of the AWS Lambda function.
+    Default: axiom-cloudwatch-subscriber
     AllowedPattern: ".+" # required
-  AxiomCloudWatchLambdaIngesterARN:
+  AxiomCloudWatchForwarderLambdaARN:
     Type: String
-    Description: The ARN of the AWS Lambda Function that is used to ingest data to axiom.
+    Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to ship logs to Axiom.
     AllowedPattern: ".+" # required
   CloudWatchLogGroupsPrefix:
     Type: String
-    Description: The Prefix of cloudwatch log groups to subscribe to the AWS Lambda ingester.
+    Description: The Prefix of CloudWatch log groups to trigger the Axiom CloudWatch Forwarder lambda.
     Default: "" # all
 Resources:
-  BackfillerPolicy:
+  SubscriberPolicy:
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
@@ -26,10 +26,10 @@ Resources:
               - lambda:RemovePermission
             Effect: Allow
             Resource: '*'
-      PolicyName: axiom-cloudwatch-backfiller-lambda-policy
+      PolicyName: axiom-cloudwatch-subscriber-lambda-policy
       Roles:
-        - !Ref 'BackfillerRole'
-  BackfillerRole:
+        - !Ref 'SubscriberRole'
+  SubscriberRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -42,7 +42,7 @@ Resources:
                 - lambda.amazonaws.com
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-  BackfillerLambda:
+  SubscriberLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Ref LambdaFunctionName
@@ -52,18 +52,18 @@ Resources:
       Code:
         ZipFile: |
           # DO NOT EDIT
-          # CI will replace these comments with the code from ./backfill.py
+          # CI will replace these comments with the code from ./subscriber.py
       Role: !GetAtt
-        - BackfillerRole
+        - SubscriberRole
         - Arn
       Environment:
         Variables:
-          AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN: !Ref 'AxiomCloudWatchLambdaIngesterARN'
+          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref 'AxiomCloudWatchForwarderLambdaARN'
           LOG_GROUP_PREFIX: !Ref 'CloudWatchLogGroupsPrefix'
-  BackfillerInvoker:
+  SubscriberInvoker:
     Type: AWS::CloudFormation::CustomResource
-    DependsOn: BackfillerLambda
+    DependsOn: SubscriberLambda
     Version: "1.0"
     Properties:
-      ServiceToken: !GetAtt BackfillerLambda.Arn
+      ServiceToken: !GetAtt SubscriberLambda.Arn
       StackName: !Ref AWS::StackName

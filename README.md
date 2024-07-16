@@ -13,13 +13,13 @@ Axiom CloudWatch Lambda uses the following CloudFormation stacks:
 1. [Create an Axiom account](https://app.axiom.co).
 2. Create a dataset in Axiom.
 3. Create an API token in Axiom with permissions to ingest data to the dataset you created.
-4. [Click this link to launch the Stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=cloudwatch-ingester-axiom&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-cloudformation-stack.yaml).
-5. [Click this link to automatically subscribe to all existing log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=cloudwatch-backfiller-axiom&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber-cloudformation-stack.yaml).
-6. [Click this link to automatically subscribe to new log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=cloudwatch-subscriber-axiom&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-log-groups-listener-cloudformation-stack.yaml).
+4. [Click this link to launch the Stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-forwarder&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-cloudformation-stack.yaml).
+5. [Click this link to automatically subscribe to all existing log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber-cloudformation-stack.yaml).
+6. [Click this link to automatically subscribe to new log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-log-groups-listener&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-log-groups-listener-cloudformation-stack.yaml).
 
-## Logs Subscriber architecture
+## Log Groups Listener architecture
 
-The Logs Subscriber stack does the following:
+The Log Groups Listener stack does the following:
 
 - It creates an S3 bucket for Cloudtrail.
 - It creates a trail to capture the creation of new log groups.

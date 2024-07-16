@@ -12,7 +12,7 @@ logger.setLevel(level)
 cloudwatch_logs_client = boto3.client("logs")
 lambda_client = boto3.client("lambda")
 
-axiom_cloudwatch_lambda_ingester_arn = os.getenv("AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN")
+axiom_cloudwatch_forwarder_lambda_arn = os.getenv("AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN")
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
 log_groups_return_limit = int(os.getenv("LOG_GROUPS_LIMIT", 10))
 
@@ -44,7 +44,7 @@ def get_log_groups(token=None):
 def remove_permission(lambda_arn):
     lambda_client.remove_permission(
         FunctionName=lambda_arn,
-        StatementId="cloudwatch-backfiller-axiom",
+        StatementId="axiom-cloudwatch-subscriber",
     )
 
 
@@ -75,7 +75,7 @@ def create_statement(region, account_id, lambda_arn):
     )
     lambda_client.add_permission(
         FunctionName=lambda_arn,
-        StatementId="cloudwatch-backfiller-axiom",
+        StatementId="axiom-cloudwatch-subscriber",
         Action="lambda:InvokeFunction",
         Principal=f"logs.amazonaws.com",
         SourceArn=source_arn,
@@ -103,22 +103,22 @@ def create_subscription_filter(log_group_arn, lambda_arn):
 
 
 def lambda_handler(event: dict, context=None):
-    if axiom_cloudwatch_lambda_ingester_arn is None:
-        raise Exception("AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN is not set")
+    if axiom_cloudwatch_forwarder_lambda_arn is None:
+        raise Exception("AXIOM_CLOUDWATCH_LAMBDA_FORWARDER_ARN is not set")
 
     aws_account_id = context.invoked_function_arn.split(":")[4]
     region = os.getenv("AWS_REGION")
 
     # create permission for lambda
     try:
-        remove_permission(axiom_cloudwatch_lambda_ingester_arn)
+        remove_permission(axiom_cloudwatch_forwarder_lambda_arn)
     except Exception as e:
         logger.error(f"Error removing permission: {e}")
 
-    create_statement(region, aws_account_id, axiom_cloudwatch_lambda_ingester_arn)
+    create_statement(region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn)
 
     ingester_lambda_group_name = (
-        "/aws/lambda/" + axiom_cloudwatch_lambda_ingester_arn.split(":")[-1]
+        "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
     )
 
     def log_groups(token=None):
@@ -136,14 +136,14 @@ def lambda_handler(event: dict, context=None):
 
             try:
                 delete_subscription_filter(
-                    region, aws_account_id, axiom_cloudwatch_lambda_ingester_arn
+                    region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn
                 )
             except Exception:
                 pass
 
             try:
                 create_subscription_filter(
-                    group["arn"], axiom_cloudwatch_lambda_ingester_arn
+                    group["arn"], axiom_cloudwatch_forwarder_lambda_arn
                 )
             except cloudwatch_logs_client.exceptions.LimitExceededException as error:
                 logger.error(
