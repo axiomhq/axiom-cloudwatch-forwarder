@@ -22,7 +22,7 @@ Parameters:
   LambdaFunctionName:
     Type: String
     Description: Name of the AWS Lambda Function.
-    Default: cloudwatch-ingester-axiom
+    Default: axiom-cloudwatch-forwarder
     AllowedPattern: ".+" # required
   DataTags:
     Type: String
@@ -107,5 +107,5 @@ Resources:
               LogGroupName: !Ref GroupName
 Outputs:
   LogsLambdaARN:
-    Description: The ARN of the created Ingester Lambda
+    Description: The ARN of the created Forwarder Lambda
     Value: !GetAtt LogsLambda.Arn
