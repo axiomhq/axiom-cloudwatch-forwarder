@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: "AWS::LanguageExtensions"
+Parameters:
+  AxiomToken:
+    Description: The Token of User in Axiom. Must start with xaat- or xait-.
+    Type: String
+    NoEcho: true
+    AllowedPattern: "^(xaat-|xait-).*"
+  AxiomURL:
+    Type: String
+    Default: "https://api.axiom.co"
+    AllowedPattern: ".+" # required
+    Description: The URL of Axiom endpoint (without trailing /). Defaults to "https://api.axiom.co".
+  AxiomDataset:
+    Type: String
+    Description: The Name of the Dataset in Axiom to push events to.
+    AllowedPattern: ".+" # required
+  CloudWatchLogGroupNames:
+    Type: CommaDelimitedList
+    Description: The names of the AWS Cloudwatch Log Groups to subscribe to. Comma Seperated string of cloudwatch log group names.
+    AllowedPattern: ".*" # optional
+  LambdaFunctionName:
+    Type: String
+    Description: Name of the AWS Lambda Function.
+    Default: cloudwatch-ingester-axiom
+    AllowedPattern: ".+" # required
+  DataTags:
+    Type: String
+    Description: Tags to be included with the data ingested into axiom. e.g. <key1>=<value1>,<key2>=<value2>.
+  DisableJSON:
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Description: Whether or not disable json logs. defaults to false.
+Conditions:
+  HasCloudWatchLogGroupNames: !Not
+    - !Equals
+      - !Join ["", !Ref CloudWatchLogGroupNames]
+      - ""
+Resources:
+  "Fn::ForEach::SubscriptionFilters":
+    - GroupName
+    - !Ref CloudWatchLogGroupNames
+    - "LGSF&{GroupName}":
+        Type: AWS::Logs::SubscriptionFilter
+        Condition: HasCloudWatchLogGroupNames
+        Properties:
+          DestinationArn: !GetAtt
+            - LogsLambda
+            - Arn
+          FilterPattern: ""
+          LogGroupName: !Ref GroupName
+  LogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  LogsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          # DO NOT EDIT
+          # CI will replace these comments with the code from ./handler.py
+      Role: !GetAtt
+        - LogsRole
+        - Arn
+      Environment:
+        Variables:
+          AXIOM_TOKEN: !Ref "AxiomToken"
+          AXIOM_DATASET: !Ref "AxiomDataset"
+          AXIOM_URL: !Ref "AxiomURL"
+          DISABLE_JSON: !Ref DisableJSON
+          DATA_TAGS: !Ref DataTags
+  "Fn::ForEach::LambdaPermissions":
+    - GroupName
+    - !Ref CloudWatchLogGroupNames
+    - "LogsLambdaPermission&{GroupName}":
+        Type: AWS::Lambda::Permission
+        Condition: HasCloudWatchLogGroupNames
+        DependsOn:
+          - LogsLambda
+        Properties:
+          Action: lambda:InvokeFunction
+          FunctionName: !Ref "LogsLambda"
+          Principal: !Sub
+            - "logs.${Region}.amazonaws.com"
+            - Region: !Ref "AWS::Region"
+          SourceAccount: !Ref "AWS::AccountId"
+          SourceArn: !Sub
+            - "arn:aws:logs:${Region}:${AccountID}:log-group:${LogGroupName}:*"
+            - AccountID: !Ref "AWS::AccountId"
+              Region: !Ref "AWS::Region"
+              LogGroupName: !Ref GroupName
+Outputs:
+  LogsLambdaARN:
+    Description: The ARN of the created Ingester Lambda
+    Value: !GetAtt LogsLambda.Arn

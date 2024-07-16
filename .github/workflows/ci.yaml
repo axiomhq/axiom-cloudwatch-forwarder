@@ -1,0 +1,26 @@
+name: CI
+
+on: [push]
+
+env:
+  YQ_VERSION: "4.25.1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: psf/black@stable
+  build:
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+    steps:
+      - uses: actions/checkout@v3
+      - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
+      - run: |-
+          mkdir build
+          yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./handler.py)\""  cloudwatch-ingester-axiom-cloudformation-stack.template.yaml > build/cloudwatch-ingester-axiom-cloudformation-stack.yaml
+          yq ".Resources.BackfillerLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./backfill.py)\""  cloudwatch-backfiller-axiom-cloudformation-stack.template.yaml > build/cloudwatch-backfiller-axiom-cloudformation-stack.yaml
+          yq ".Resources.AxiomCloudWatchLogsSubscriber.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./logs_subscriber.py)\""  cloudwatch-subscriber-axiom-cloudformation-stack.template.yaml > build/cloudwatch-subscriber-axiom-cloudformation-stack.yaml
+      - run: cat build/*

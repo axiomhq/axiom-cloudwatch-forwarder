@@ -1,0 +1,38 @@
+name: Release
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  YQ_VERSION: "4.25.1"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+      - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
+      - run: |-
+          mkdir build
+          yq ".Resources.LogsLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./handler.py)\""  cloudwatch-ingester-axiom-cloudformation-stack.template.yaml > build/cloudwatch-ingester-axiom-cloudformation-stack.yaml
+          yq ".Resources.BackfillerLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./backfill.py)\"" cloudwatch-backfiller-axiom-cloudformation-stack.template.yaml > build/cloudwatch-backfiller-axiom-cloudformation-stack.yaml
+          yq ".Resources.AxiomCloudWatchLogsSubscriber.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./logs_subscriber.py)\""  cloudwatch-subscriber-axiom-cloudformation-stack.template.yaml > build/cloudwatch-subscriber-axiom-cloudformation-stack.yaml
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_IAM_ROLE }}
+          role-session-name: release_to_prod
+      - name: Release to Production
+        env:
+          SOURCE_DIR: build
+          AWS_S3_BUCKET: "axiom-cloudformation"
+          DEST_DIR: "stacks"
+        run: aws s3 sync --acl public-read ./$SOURCE_DIR s3://$AWS_S3_BUCKET/$DEST_DIR
