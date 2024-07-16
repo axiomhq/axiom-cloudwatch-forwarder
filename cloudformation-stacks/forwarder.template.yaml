@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: "AWS::LanguageExtensions"
 Parameters:
   AxiomToken:
-    Description: The Token of User in Axiom. Must start with xaat- or xait-.
+    Description: The API token with ingest permission to dataset. Must start with xaat- or xait-.
     Type: String
     NoEcho: true
     AllowedPattern: "^(xaat-|xait-).*"
@@ -13,15 +13,15 @@ Parameters:
     Description: The URL of Axiom endpoint (without trailing /). Defaults to "https://api.axiom.co".
   AxiomDataset:
     Type: String
-    Description: The Name of the Dataset in Axiom to push events to.
+    Description: The Name of the dataset in Axiom to push events to.
     AllowedPattern: ".+" # required
   CloudWatchLogGroupNames:
     Type: CommaDelimitedList
-    Description: The names of the AWS Cloudwatch Log Groups to subscribe to. Comma Seperated string of cloudwatch log group names.
+    Description: The names of the AWS CloudWatch log groups to subscribe to. Comma Separated string of CloudWatch log group names.
     AllowedPattern: ".*" # optional
   LambdaFunctionName:
     Type: String
-    Description: Name of the AWS Lambda Function.
+    Description: Name of the AWS Lambda function.
     Default: axiom-cloudwatch-forwarder
     AllowedPattern: ".+" # required
   DataTags:
