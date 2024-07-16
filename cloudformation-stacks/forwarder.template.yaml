@@ -27,13 +27,6 @@ Parameters:
   DataTags:
     Type: String
     Description: Tags to be included with the data ingested into axiom. e.g. <key1>=<value1>,<key2>=<value2>.
-  DisableJSON:
-    Type: String
-    AllowedValues:
-      - true
-      - false
-    Default: false
-    Description: Whether or not disable json logs. defaults to false.
 Conditions:
   HasCloudWatchLogGroupNames: !Not
     - !Equals

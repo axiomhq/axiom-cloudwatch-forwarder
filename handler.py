@@ -42,7 +42,6 @@ report_matcher = re.compile(
 axiom_url = os.getenv("AXIOM_URL", "https://api.axiom.co").strip("/")
 axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
-disable_json = os.getenv("DISABLE_JSON", "false") == "true"
 data_tags_string = os.getenv("DATA_TAGS")
 data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
@@ -182,14 +181,14 @@ def lambda_handler(event: dict, context=None):
 
         lambda_data = None
         json_data = None
-        if not disable_json:
-            # Try to Parse message as json
+        if message.startswith("{") and message.endswith("}"):
+            # Try to Parse message as JSON
             json_data = structured_message(message)
             if json_data is not None:
                 # Data is parsed to JSON, so use it
                 lambda_data = json_data
 
-        # Parse json is not allowed or failed.
+        # Message is not JSON or parsing failed.
         if json_data is None:
             msg = parse_message(message)
             if len(msg) != 0:
