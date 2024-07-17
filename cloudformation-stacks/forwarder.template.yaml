@@ -15,10 +15,6 @@ Parameters:
     Type: String
     Description: The Name of the dataset in Axiom to push events to.
     AllowedPattern: ".+" # required
-  CloudWatchLogGroupNames:
-    Type: CommaDelimitedList
-    Description: The names of the AWS CloudWatch log groups to subscribe to. Comma Separated string of CloudWatch log group names.
-    AllowedPattern: ".*" # optional
   LambdaFunctionName:
     Type: String
     Description: Name of the AWS Lambda function.
@@ -27,25 +23,8 @@ Parameters:
   DataTags:
     Type: String
     Description: Tags to be included with the data ingested into axiom. e.g. <key1>=<value1>,<key2>=<value2>.
-Conditions:
-  HasCloudWatchLogGroupNames: !Not
-    - !Equals
-      - !Join ["", !Ref CloudWatchLogGroupNames]
-      - ""
 Resources:
-  "Fn::ForEach::SubscriptionFilters":
-    - GroupName
-    - !Ref CloudWatchLogGroupNames
-    - "LGSF&{GroupName}":
-        Type: AWS::Logs::SubscriptionFilter
-        Condition: HasCloudWatchLogGroupNames
-        Properties:
-          DestinationArn: !GetAtt
-            - LogsLambda
-            - Arn
-          FilterPattern: ""
-          LogGroupName: !Ref GroupName
-  LogsRole:
+  AxiomCloudWatchForwarderRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -58,7 +37,7 @@ Resources:
                 - lambda.amazonaws.com
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  LogsLambda:
+  AxiomCloudWatchForwarder:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Ref LambdaFunctionName
@@ -69,7 +48,7 @@ Resources:
           # DO NOT EDIT
           # CI will replace these comments with the code from ./handler.py
       Role: !GetAtt
-        - LogsRole
+        - AxiomCloudWatchForwarderRole
         - Arn
       Environment:
         Variables:
@@ -78,27 +57,7 @@ Resources:
           AXIOM_URL: !Ref "AxiomURL"
           DISABLE_JSON: !Ref DisableJSON
           DATA_TAGS: !Ref DataTags
-  "Fn::ForEach::LambdaPermissions":
-    - GroupName
-    - !Ref CloudWatchLogGroupNames
-    - "LogsLambdaPermission&{GroupName}":
-        Type: AWS::Lambda::Permission
-        Condition: HasCloudWatchLogGroupNames
-        DependsOn:
-          - LogsLambda
-        Properties:
-          Action: lambda:InvokeFunction
-          FunctionName: !Ref "LogsLambda"
-          Principal: !Sub
-            - "logs.${Region}.amazonaws.com"
-            - Region: !Ref "AWS::Region"
-          SourceAccount: !Ref "AWS::AccountId"
-          SourceArn: !Sub
-            - "arn:aws:logs:${Region}:${AccountID}:log-group:${LogGroupName}:*"
-            - AccountID: !Ref "AWS::AccountId"
-              Region: !Ref "AWS::Region"
-              LogGroupName: !Ref GroupName
 Outputs:
-  LogsLambdaARN:
+  AxiomCloudWatchForwarderARN:
     Description: The ARN of the created Forwarder Lambda
-    Value: !GetAtt LogsLambda.Arn
+    Value: !GetAtt AxiomCloudWatchForwarder.Arn

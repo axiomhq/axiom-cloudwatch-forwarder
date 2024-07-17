@@ -1,3 +1,4 @@
+import re
 import boto3
 import os
 import logging
@@ -12,33 +13,49 @@ logger.setLevel(level)
 cloudwatch_logs_client = boto3.client("logs")
 lambda_client = boto3.client("lambda")
 
-axiom_cloudwatch_forwarder_lambda_arn = os.getenv("AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN")
+axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
+    "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN"
+)
+log_group_names = os.getenv("LOG_GROUP_NAMES", "")
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
-log_groups_return_limit = int(os.getenv("LOG_GROUPS_LIMIT", 10))
+log_group_pattern = os.getenv("LOG_GROUP_PATTERN", "")
+log_groups_return_limit = int(os.getenv("LOG_GROUPS_LIMIT", 50))
 
 
-def get_log_groups(token=None):
-    if token is None:
-        if log_group_prefix != "":
-            return cloudwatch_logs_client.describe_log_groups(
-                logGroupNamePrefix=log_group_prefix, limit=log_groups_return_limit
-            )
-        else:
-            return cloudwatch_logs_client.describe_log_groups(
-                limit=log_groups_return_limit
-            )
-    else:
-        if log_group_prefix != "":
-            return cloudwatch_logs_client.describe_log_groups(
-                logGroupNamePrefix=log_group_prefix,
-                nextToken=token,
-                limit=log_groups_return_limit,
-            )
-        else:
-            return cloudwatch_logs_client.describe_log_groups(
-                nextToken=token,
-                limit=log_groups_return_limit,
-            )
+def build_groups_list(all_groups, names, pattern, prefix):
+    # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
+    groups = []
+    for g in all_groups:
+        group = {"name": g["logGroupName"], "arn": g["arn"]}
+        if names is not None and group["name"] in names:
+            groups.append(group)
+            continue
+        elif prefix is not None and group["name"].startswith(prefix):
+            groups.append(group)
+            continue
+        elif pattern is not None and re.match(pattern, group["name"]):
+            groups.append(group)
+
+    return groups
+
+
+def get_log_groups(nextToken=None):
+    # check docs:
+    # 1. boto3 https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
+    # 2. AWS API https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DescribeLogGroups.html#API_DescribeLogGroups_RequestSyntax
+    resp = cloudwatch_logs_client.describe_log_groups(limit=log_groups_return_limit)
+    all_groups = resp["logGroups"]
+    nextToken = resp["nextToken"]
+    # continue fetching log groups until nextToken is None
+    while nextToken is not None:
+        resp = cloudwatch_logs_client.describe_log_groups(
+            limit=log_groups_return_limit, nextToken=nextToken
+        )
+        all_groups.extend(resp["logGroups"])
+        # print(f'got ${len(all_groups)} groups')
+        nextToken = resp["nextToken"] if "nextToken" in resp else None
+
+    return all_groups
 
 
 def remove_permission(lambda_arn):
@@ -117,21 +134,19 @@ def lambda_handler(event: dict, context=None):
 
     create_statement(region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn)
 
-    ingester_lambda_group_name = (
+    forwarder_lambda_group_name = (
         "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
     )
 
-    def log_groups(token=None):
-        groups_response = get_log_groups(token)
-        groups = groups_response["logGroups"]
-        token = groups_response["nextToken"] if "nextToken" in groups_response else None
+    log_groups = build_groups_list(
+        get_log_groups(), log_group_names, log_group_pattern, log_group_prefix
+    )
 
-        if len(groups) == 0:
-            return
-
-        for group in groups:
-            # skip the ingester lambda log group to avoid circular logging
-            if group["logGroupName"] == ingester_lambda_group_name:
+    responseData = {}
+    try:
+        for group in log_groups:
+            # skip the Forwarder lambda log group to avoid circular logging
+            if group["logGroupName"] == forwarder_lambda_group_name:
                 continue
 
             try:
@@ -152,18 +167,6 @@ def lambda_handler(event: dict, context=None):
                 )
                 logger.error(error)
                 continue
-
-        if token is None:
-            return
-
-        try:
-            log_groups(token)
-        except Exception as e:
-            raise e
-
-    responseData = {}
-    try:
-        log_groups()
     except Exception as e:
         responseData["success"] = "False"
         if "ResponseURL" in event:

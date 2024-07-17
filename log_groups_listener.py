@@ -4,7 +4,9 @@ import os
 import logging
 
 # Set environment variables.
-axiom_cloudwatch_forwarder_lambda_arn = os.getenv("AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN")
+axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
+    "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN"
+)
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
 
 # set logger

@@ -8,10 +8,21 @@ Parameters:
     Type: String
     Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to ship logs to Axiom.
     AllowedPattern: ".+" # required
+  CloudWatchLogGroupsNames:
+    Type: String
+    Description: A comma separated list of CloudWatch log groups to subscribe to.
+    Default: "" # all
+    required: false
   CloudWatchLogGroupsPrefix:
     Type: String
-    Description: The Prefix of CloudWatch log groups to trigger the Axiom CloudWatch Forwarder lambda.
+    Description: The Prefix of CloudWatch log groups to subscribe to.
     Default: "" # all
+    required: false
+  CloudWatchLogGroupsPattern:
+    Type: String
+    Description: A regular expression pattern of CloudWatch log groups to subscribe to.
+    Default: "" # all
+    required: false
 Resources:
   SubscriberPolicy:
     Type: AWS::IAM::Policy
@@ -59,7 +70,9 @@ Resources:
       Environment:
         Variables:
           AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref 'AxiomCloudWatchForwarderLambdaARN'
+          LOG_GROUP_NAMES: !Ref 'CloudWatchLogGroupsNames'
           LOG_GROUP_PREFIX: !Ref 'CloudWatchLogGroupsPrefix'
+          LOG_GROUP_PATTERN: !Ref 'CloudWatchLogGroupsPattern'
   SubscriberInvoker:
     Type: AWS::CloudFormation::CustomResource
     DependsOn: SubscriberLambda
