@@ -14,8 +14,9 @@ Axiom CloudWatch Lambda uses the following CloudFormation stacks:
 2. Create a dataset in Axiom.
 3. Create an API token in Axiom with permissions to ingest data to the dataset you created.
 4. [Click this link to launch the Stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-forwarder&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-cloudformation-stack.yaml).
-5. [Click this link to automatically subscribe to all existing log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber-cloudformation-stack.yaml).
-6. [Click this link to automatically subscribe to new log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-log-groups-listener&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-log-groups-listener-cloudformation-stack.yaml).
+5. Get the created Forwarder lambda ARN from the previous step, and use it to install the Subscriber stack in the next step.
+6. [Click this link to automatically subscribe to all existing log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber-cloudformation-stack.yaml).
+7. [Click this link to automatically subscribe to new log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-log-groups-listener&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-log-groups-listener-cloudformation-stack.yaml).
 
 ## Log Groups Listener architecture
 
