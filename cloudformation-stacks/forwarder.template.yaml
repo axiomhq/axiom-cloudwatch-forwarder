@@ -1,3 +1,4 @@
+Description: Axiom CloudWatch Forwarder Lambda
 AWSTemplateFormatVersion: 2010-09-09
 Transform: "AWS::LanguageExtensions"
 Parameters:

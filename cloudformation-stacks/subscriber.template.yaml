@@ -1,3 +1,22 @@
+Description: A lambda that creates subscription filters for existing log groups
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Subscriber lambda"
+        Parameters:
+          - LambdaFunctionName
+      - Label:
+          default: "Forwarder lambda"
+        Parameters:
+          - AxiomCloudWatchForwarderLambdaARN
+      - Label: 
+          default: "Which log groups to subscribe to?"
+        Parameters:
+          - CloudWatchLogGroupsNames
+          - CloudWatchLogGroupsPrefix
+          - CloudWatchLogGroupsPattern
+
 Parameters:
   LambdaFunctionName:
     Type: String
@@ -12,17 +31,14 @@ Parameters:
     Type: String
     Description: A comma separated list of CloudWatch log groups to subscribe to.
     Default: "" # all
-    required: false
   CloudWatchLogGroupsPrefix:
     Type: String
     Description: The Prefix of CloudWatch log groups to subscribe to.
     Default: "" # all
-    required: false
   CloudWatchLogGroupsPattern:
     Type: String
     Description: A regular expression pattern of CloudWatch log groups to subscribe to.
     Default: "" # all
-    required: false
 Resources:
   SubscriberPolicy:
     Type: AWS::IAM::Policy
