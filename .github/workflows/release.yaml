@@ -21,10 +21,10 @@ jobs:
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
       - run: |-
           mkdir build
-          yq ".Resources.AxiomCloudWatchForwarder.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./handler.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
-          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./subscriber.py)\"" cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
-          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./unsubscriber.py)\"" cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
-          yq ".Resources.AxiomCloudWatchLogGroupsListener.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./logs_subscriber.py)\""  cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-log-groups-listener-cloudformation-stack.yaml
+          yq ".Resources.AxiomCloudWatchForwarder.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./handler.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-v${{ github.ref_name }}-cloudformation-stack.yaml
+          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./subscriber.py)\"" cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-v${{ github.ref_name }}-cloudformation-stack.yaml
+          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./unsubscriber.py)\"" cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-v${{ github.ref_name }}-cloudformation-stack.yaml
+          yq ".Resources.AxiomCloudWatchLogGroupsListener.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./logs_subscriber.py)\""  cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-log-groups-listener-v${{ github.ref_name }}-cloudformation-stack.yaml
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

@@ -1,0 +1,98 @@
+Description: A lambda that creates subscription filters for existing log groups
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Subscriber lambda"
+        Parameters:
+          - LambdaFunctionName
+      - Label:
+          default: "Forwarder lambda"
+        Parameters:
+          - AxiomCloudWatchForwarderLambdaARN
+      - Label: 
+          default: "Which log groups to subscribe to?"
+        Parameters:
+          - CloudWatchLogGroupsNames
+          - CloudWatchLogGroupsPrefix
+          - CloudWatchLogGroupsPattern
+
+Parameters:
+  LambdaFunctionName:
+    Type: String
+    Description: Name of the AWS Lambda function.
+    Default: axiom-cloudwatch-subscriber
+    AllowedPattern: ".+" # required
+  AxiomCloudWatchForwarderLambdaARN:
+    Type: String
+    Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to ship logs to Axiom.
+    AllowedPattern: ".+" # required
+  CloudWatchLogGroupsNames:
+    Type: String
+    Description: A comma separated list of CloudWatch log groups to subscribe to.
+    Default: "" # all
+  CloudWatchLogGroupsPrefix:
+    Type: String
+    Description: The Prefix of CloudWatch log groups to subscribe to.
+    Default: "" # all
+  CloudWatchLogGroupsPattern:
+    Type: String
+    Description: A regular expression pattern of CloudWatch log groups to subscribe to.
+    Default: "" # all
+Resources:
+  SubscriberPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - logs:DeleteSubscriptionFilter
+              - logs:PutSubscriptionFilter
+              - logs:DescribeLogGroups
+              - lambda:AddPermission
+              - lambda:RemovePermission
+            Effect: Allow
+            Resource: '*'
+      PolicyName: axiom-cloudwatch-subscriber-lambda-policy
+      Roles:
+        - !Ref 'SubscriberRole'
+  SubscriberRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+  SubscriberLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Timeout: 300
+      Code:
+        ZipFile: |
+          # DO NOT EDIT
+          # CI will replace these comments with the code from ./subscriber.py
+      Role: !GetAtt
+        - SubscriberRole
+        - Arn
+      Environment:
+        Variables:
+          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref 'AxiomCloudWatchForwarderLambdaARN'
+          LOG_GROUP_NAMES: !Ref 'CloudWatchLogGroupsNames'
+          LOG_GROUP_PREFIX: !Ref 'CloudWatchLogGroupsPrefix'
+          LOG_GROUP_PATTERN: !Ref 'CloudWatchLogGroupsPattern'
+  SubscriberInvoker:
+    Type: AWS::CloudFormation::CustomResource
+    DependsOn: SubscriberLambda
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt SubscriberLambda.Arn
+      StackName: !Ref AWS::StackName
