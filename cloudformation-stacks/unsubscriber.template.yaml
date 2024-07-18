@@ -11,7 +11,7 @@ Metadata:
         Parameters:
           - AxiomCloudWatchForwarderLambdaARN
       - Label: 
-          default: "Which log groups to unsubscribe from?"
+          default: "Log groups to unsubscribe from"
         Parameters:
           - CloudWatchLogGroupsNames
           - CloudWatchLogGroupsPrefix
