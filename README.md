@@ -43,7 +43,7 @@ Let's assume we have this list of log groups:
 ```
 
 - To subscribe to the Lambda log groups exclusively, a prefix filter with the value of `/aws/lambda` would do the job.
-- To subscribe to eks and rds log groups, a list of names with the value of `/aws/eks/cluster/cluster1,/aws/rds/instanceFoo` would do the job.
+- To subscribe to EKS and RDS log groups, a list of names with the value of `/aws/eks/cluster/cluster-1,/aws/rds/instance-foo` would work well.
 - To subscribe to the EKS log group and all Lambda log groups, a combination of prefix and names list would select them. Log group names, prefixes, and regular expressions are additive, meaning the union of all provided inputs will be matched.
 
 
