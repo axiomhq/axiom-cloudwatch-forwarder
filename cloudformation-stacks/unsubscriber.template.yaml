@@ -10,7 +10,7 @@ Metadata:
           default: "Forwarder lambda"
         Parameters:
           - AxiomCloudWatchForwarderLambdaARN
-      - Label: 
+      - Label:
           default: "Log groups to unsubscribe from"
         Parameters:
           - CloudWatchLogGroupsNames
@@ -28,7 +28,7 @@ Parameters:
     Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to forward logs to Axiom.
     AllowedPattern: ".+" # required
   CloudWatchLogGroupsNames:
-    Type: CommaDelimitedList
+    Type: String
     Description: A comma-separated list of CloudWatch log groups to unsubscribe from.
     Default: "" # all
   CloudWatchLogGroupsPrefix:
@@ -52,24 +52,24 @@ Resources:
               - lambda:AddPermission
               - lambda:RemovePermission
             Effect: Allow
-            Resource: '*'
+            Resource: "*"
       PolicyName: axiom-cloudwatch-unsubscriber-lambda-policy
       Roles:
-        - !Ref 'UnsubscriberRole'
+        - !Ref "UnsubscriberRole"
   UnsubscriberRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Statement:
           - Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
             Effect: Allow
             Principal:
               Service:
                 - lambda.amazonaws.com
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-  SubscriberLambda:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  UnsubscriberLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Ref LambdaFunctionName
@@ -85,13 +85,13 @@ Resources:
         - Arn
       Environment:
         Variables:
-          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref 'AxiomCloudWatchForwarderLambdaARN'
-          LOG_GROUP_NAMES: !Ref 'CloudWatchLogGroupsNames'
-          LOG_GROUP_PREFIX: !Ref 'CloudWatchLogGroupsPrefix'
-          LOG_GROUP_PATTERN: !Ref 'CloudWatchLogGroupsPattern'
-  SubscriberInvoker:
+          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"
+          LOG_GROUP_NAMES: !Ref "CloudWatchLogGroupsNames"
+          LOG_GROUP_PREFIX: !Ref "CloudWatchLogGroupsPrefix"
+          LOG_GROUP_PATTERN: !Ref "CloudWatchLogGroupsPattern"
+  UnsubscriberInvoker:
     Type: AWS::CloudFormation::CustomResource
-    DependsOn: SubscriberLambda
+    DependsOn: UnsubscriberLambda
     Version: "1.0"
     Properties:
       ServiceToken: !GetAtt UnsubscriberLambda.Arn
