@@ -10,7 +10,7 @@ Axiom CloudWatch Lambda uses the following CloudFormation stacks:
 
 ## Guide
 
-1. [Create an Axiom account](https://app.axiom.co).
+1. [Create an Axiom organization](https://app.axiom.co).
 2. Create a dataset in Axiom.
 3. Create an API token in Axiom with permissions to ingest data to the dataset you created.
 4. [Click this link to launch the Forwarder Stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-forwarder&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-v1.0.0-cloudformation-stack.yaml).
