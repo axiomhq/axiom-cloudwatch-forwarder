@@ -23,7 +23,7 @@ Parameters:
     AllowedPattern: ".+" # required
   DataTags:
     Type: String
-    Description: Tags to be included with the data ingested into axiom. e.g. <key1>=<value1>,<key2>=<value2>.
+    Description: Tags to be included with the data ingested into Axiom, e.g., <key1>=<value1>,<key2>=<value2>.
 Resources:
   AxiomCloudWatchForwarderRole:
     Type: AWS::IAM::Role
