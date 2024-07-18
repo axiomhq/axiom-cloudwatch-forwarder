@@ -14,7 +14,7 @@ Parameters:
     Description: The URL of Axiom endpoint (without trailing /). Defaults to "https://api.axiom.co".
   AxiomDataset:
     Type: String
-    Description: The Name of the dataset in Axiom to push events to.
+    Description: The name of the Axiom dataset to which events will be forwarded.
     AllowedPattern: ".+" # required
   LambdaFunctionName:
     Type: String
