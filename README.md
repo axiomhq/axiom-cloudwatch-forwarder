@@ -5,8 +5,9 @@ Axiom CloudWatch Forwarder is a set of easy-to-use AWS CloudFormation stacks des
 Axiom CloudWatch Forwarder includes templates for the following CloudFormation stacks:
 
 - **Forwarder** creates a Lambda function that forwards logs from CloudWatch to Axiom.
-- **Subscriber** runs once to create subscription filters on _Forwarder_ for CloudWatch log groups specified by a combination of names, prefix a regular expression.
+- **Subscriber** runs once to create subscription filters on _Forwarder_ for CloudWatch log groups specified by a combination of names, prefix, prefix, and regular expression.
 - **Listener** creates a Lambda function that listens for new log groups and creates subscription filters for them on _Forwarder_. This way, you don't have to create subscription filters manually for new log groups.
+- **Unsubscriber**: runs once to remove subscription filters on _Forwarder_ for CloudWatch log groups specified by a combination of names, prefix, and regular expression.
 
 ## Setting up CloudWatch log group forwarding
 
@@ -22,12 +23,15 @@ For guidance on unsubscribing from log groups, please see [Removing subscription
 
 ## Filtering CloudWatch log groups
 
-The Subscriber and Unsubscriber stacks allow you to filter the log groups by one or a combination of names, regex pattern and a prefix. Basically,
-You can whitelist a number of log groups. If you don't specify any filter, the stack will subscribe to all log groups. If a log group matches one of the filters, it will be subscribed to.
+The _Subscriber_ and _Unsubscriber_ stacks allow you to filter the log groups by a combination of names, prefix, and regular expression.
+
+If no filters are specified, the stacks will subscribe to or unsubscribe from all log groups. You can also whitelist a specific set of log groups using filters in the CloudFormation stack parameters.
+
+The log group names, prefix, and regular expression filters included are additive, meaning the union of all provided inputs will be matched.
 
 ### Example
 
-Let's assume we have this list of log groups:
+Assume we have the following list of log groups:
 
 ```
 /aws/lambda/function-foo
@@ -39,8 +43,6 @@ Let's assume we have this list of log groups:
 - To subscribe to the Lambda log groups exclusively, a prefix filter with the value of `/aws/lambda` is a good choice.
 - To subscribe to EKS and RDS log groups, a list of names with the value of `/aws/eks/cluster/cluster-1,/aws/rds/instance-baz` would work well.
 - To subscribe to the EKS log group and all Lambda log groups, a combination of prefix and names list would select them.
-
-The log group names, prefix, and regular expression included are additive, meaning the union of all provided inputs will be matched.
 
 ## Listener architecture
 
