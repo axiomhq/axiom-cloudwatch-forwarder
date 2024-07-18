@@ -6,7 +6,7 @@ Axiom CloudWatch Forwarder includes templates for the following CloudFormation s
 
 - Forwarder creates a Lambda function that forwards logs from CloudWatch to Axiom.
 - _Subscriber_ runs once to create subscription filters on the _Forwarder_ Lambda for CloudWatch log groups specified by a combination of names, prefix and regular expression.
-- LogGroups Listener creates a Lambda function that listens for new log groups and creates subscription filters for them. This way, you don't have to create subscription filters manually for new log groups.
+- _Listener_ creates a Lambda function that listens for new log groups and creates subscription filters for them. This way, you don't have to create subscription filters manually for new log groups.
 
 ## Guide
 
@@ -16,7 +16,7 @@ Axiom CloudWatch Forwarder includes templates for the following CloudFormation s
 4. [Click this link to launch the Forwarder Stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-forwarder&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-v1.0.0-cloudformation-stack.yaml).
 5. Get the created Forwarder lambda ARN from the previous step, and use it to install the Subscriber stack in the next step.
 6. [Click this link to open the Subscriber stack template](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber-v1.0.0-cloudformation-stack.yaml).
-7. [Click this link to automatically subscribe to new log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-log-groups-listener&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-log-groups-listener-v1.0.0-cloudformation-stack.yaml).
+7. [Click this link to automatically subscribe to new log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-listener&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-listener-v1.0.0-cloudformation-stack.yaml).
 
 
 ## Removing subscription filters
