@@ -81,7 +81,7 @@ def delete_subscription_filter(log_group_name: str):
         raise e
 
 
-def create_statement(region: str, account_id: str, lambda_arn: str):
+def add_permission(region: str, account_id: str, lambda_arn: str):
     logger.info(f"Creating permission for {lambda_arn}...")
     source_arn = "arn:aws:logs:%s:%s:log-group:*:*" % (
         region,
@@ -129,7 +129,7 @@ def lambda_handler(event: dict, context=None):
     except Exception as e:
         logger.error(f"Error removing permission: {e}")
 
-    create_statement(region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn)
+    add_permission(region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn)
 
     forwarder_lambda_group_name = (
         "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
