@@ -33,7 +33,7 @@ Parameters:
     Default: "" # all
   CloudWatchLogGroupsPrefix:
     Type: String
-    Description: The Prefix of CloudWatch log groups to unsubscribe from.
+    Description: The prefix of CloudWatch log groups to unsubscribe from.
     Default: "" # all
   CloudWatchLogGroupsPattern:
     Type: String
