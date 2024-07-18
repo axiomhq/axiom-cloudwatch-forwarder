@@ -19,7 +19,7 @@ Metadata:
 
 Parameters:
   LambdaFunctionName:
-    Type: String
+    Type: CommaDelimitedList
     Description: Name of the AWS Lambda function.
     Default: axiom-cloudwatch-subscriber
     AllowedPattern: ".+" # required

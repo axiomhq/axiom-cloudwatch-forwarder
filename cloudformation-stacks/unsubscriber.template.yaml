@@ -28,7 +28,7 @@ Parameters:
     Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to forward logs to Axiom.
     AllowedPattern: ".+" # required
   CloudWatchLogGroupsNames:
-    Type: String
+    Type: CommaDelimitedList
     Description: A comma-separated list of CloudWatch log groups to unsubscribe from.
     Default: "" # all
   CloudWatchLogGroupsPrefix:
