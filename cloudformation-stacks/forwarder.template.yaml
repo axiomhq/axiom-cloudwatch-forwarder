@@ -56,7 +56,6 @@ Resources:
           AXIOM_TOKEN: !Ref "AxiomToken"
           AXIOM_DATASET: !Ref "AxiomDataset"
           AXIOM_URL: !Ref "AxiomURL"
-          DISABLE_JSON: !Ref DisableJSON
           DATA_TAGS: !Ref DataTags
 Outputs:
   AxiomCloudWatchForwarderARN:
