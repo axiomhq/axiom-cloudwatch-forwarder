@@ -4,7 +4,7 @@ Axiom CloudWatch Forwarder is a set of easy-to-use AWS CloudFormation stacks des
 
 Axiom CloudWatch Forwarder includes templates for the following CloudFormation stacks:
 
-- Axiom Forwarder creates a Lambda function that ingests logs from CloudWatch and sends them to Axiom.
+- Forwarder creates a Lambda function that forwards logs from CloudWatch to Axiom.
 - _Subscriber_ runs once to create subscription filters on the _Forwarder_ Lambda for CloudWatch log groups specified by a combination of names, prefix and regular expression.
 - LogGroups Listener creates a Lambda function that listens for new log groups and creates subscription filters for them. This way, you don't have to create subscription filters manually for new log groups.
 
