@@ -29,7 +29,7 @@ Parameters:
     AllowedPattern: ".+" # required
   CloudWatchLogGroupsNames:
     Type: String
-    Description: A comma separated list of CloudWatch log groups to unsubscribe from.
+    Description: A comma-separated list of CloudWatch log groups to unsubscribe from.
     Default: "" # all
   CloudWatchLogGroupsPrefix:
     Type: String
