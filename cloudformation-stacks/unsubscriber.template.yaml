@@ -37,7 +37,7 @@ Parameters:
     Default: "" # all
   CloudWatchLogGroupsPattern:
     Type: String
-    Description: A regular expression pattern of CloudWatch log groups to unsubscribe from.
+    Description: A regular expression pattern for CloudWatch log groups to unsubscribe from.
     Default: "" # all
 Resources:
   UnsubscriberPolicy:
