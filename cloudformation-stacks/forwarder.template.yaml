@@ -47,7 +47,7 @@ Resources:
       Code:
         ZipFile: |
           # DO NOT EDIT
-          # CI will replace these comments with the code from ./handler.py
+          # CI will replace these comments with the code from ./forwarder.py
       Role: !GetAtt
         - AxiomCloudWatchForwarderRole
         - Arn
