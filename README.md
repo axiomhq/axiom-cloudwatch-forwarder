@@ -51,7 +51,7 @@ Let's assume we have this list of log groups:
 
 The Log Groups Listener stack does the following:
 
-- It creates an S3 bucket for Cloudtrail.
+- It creates an Amazon S3 bucket for AWS CloudTrail.
 - It creates a trail to capture the creation of new log groups.
 - It creates an event rule to pass those creation events to an EventBridge event bus.
 - The EventBridge sends an event to a Lambda function when a new log group is created.
