@@ -19,7 +19,7 @@ axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
 log_group_names = os.getenv("LOG_GROUP_NAMES", "")
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
 log_group_pattern = os.getenv("LOG_GROUP_PATTERN", "")
-log_groups_return_limit = int(os.getenv("LOG_GROUPS_LIMIT", 50))
+log_groups_return_limit = 50
 
 
 def build_groups_list(all_groups, names, pattern, prefix):
@@ -64,10 +64,8 @@ def remove_permission(lambda_arn):
     )
 
 
-def delete_subscription_filter(log_group_arn, lambda_arn):
+def delete_subscription_filter(log_group_name):
     try:
-        log_group_name = log_group_arn.split(":")[-2]
-
         logger.info(f"Deleting subscription filter for {log_group_name}...")
 
         cloudwatch_logs_client.delete_subscription_filter(
@@ -145,13 +143,11 @@ def lambda_handler(event: dict, context=None):
     try:
         for group in log_groups:
             # skip the Forwarder lambda log group to avoid circular logging
-            if group["logGroupName"] == forwarder_lambda_group_name:
+            if group["name"] == forwarder_lambda_group_name:
                 continue
 
             try:
-                delete_subscription_filter(
-                    region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn
-                )
+                delete_subscription_filter(group["name"])
             except Exception:
                 pass
 
@@ -161,8 +157,7 @@ def lambda_handler(event: dict, context=None):
                 )
             except cloudwatch_logs_client.exceptions.LimitExceededException as error:
                 logger.error(
-                    "failed to create subscription filter for: %s"
-                    % group["logGroupName"]
+                    "failed to create subscription filter for: %s" % group["name"]
                 )
                 logger.error(error)
                 continue
