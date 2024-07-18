@@ -11,7 +11,7 @@ Parameters:
     Type: String
     Default: "https://api.axiom.co"
     AllowedPattern: ".+" # required
-    Description: The URL of Axiom endpoint (without trailing /). Defaults to "https://api.axiom.co".
+    Description: The URL of the Axiom endpoint (without a trailing /). Defaults to "https://api.axiom.co".
   AxiomDataset:
     Type: String
     Description: The name of the Axiom dataset to which events will be forwarded.
