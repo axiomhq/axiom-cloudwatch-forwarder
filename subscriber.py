@@ -22,7 +22,7 @@ log_group_pattern = os.getenv("LOG_GROUP_PATTERN", "")
 log_groups_return_limit = 50
 
 
-def build_groups_list(all_groups, names, pattern, prefix):
+def build_groups_list(all_groups: list, names: list, pattern: str, prefix: str):
     # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
     groups = []
     for g in all_groups:
@@ -57,14 +57,14 @@ def get_log_groups(nextToken=None):
     return all_groups
 
 
-def remove_permission(lambda_arn):
+def remove_permission(lambda_arn: str):
     lambda_client.remove_permission(
         FunctionName=lambda_arn,
         StatementId="axiom-cloudwatch-subscriber",
     )
 
 
-def delete_subscription_filter(log_group_name):
+def delete_subscription_filter(log_group_name: str):
     try:
         logger.info(f"Deleting subscription filter for {log_group_name}...")
 
@@ -81,7 +81,7 @@ def delete_subscription_filter(log_group_name):
         raise e
 
 
-def create_statement(region, account_id, lambda_arn):
+def create_statement(region: str, account_id: str, lambda_arn: str):
     logger.info(f"Creating permission for {lambda_arn}...")
     source_arn = "arn:aws:logs:%s:%s:log-group:*:*" % (
         region,
@@ -96,7 +96,7 @@ def create_statement(region, account_id, lambda_arn):
     )
 
 
-def create_subscription_filter(log_group_arn, lambda_arn):
+def create_subscription_filter(log_group_arn: str, lambda_arn: str):
     try:
         log_group_name = log_group_arn.split(":")[-2]
         logger.info(f"Creating subscription filter for {log_group_name}...")

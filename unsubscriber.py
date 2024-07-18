@@ -22,7 +22,7 @@ log_group_pattern = os.getenv("LOG_GROUP_PATTERN", "")
 log_groups_return_limit = 50
 
 
-def build_groups_list(all_groups, names, pattern, prefix):
+def build_groups_list(all_groups: list, names: list, pattern: str, prefix: str):
     # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
     groups = []
     for g in all_groups:
@@ -57,7 +57,7 @@ def get_log_groups(nextToken=None):
     return all_groups
 
 
-def delete_subscription_filter(log_group_name):
+def delete_subscription_filter(log_group_name: str):
     try:
         logger.info(f"Deleting subscription filter for {log_group_name}...")
 
