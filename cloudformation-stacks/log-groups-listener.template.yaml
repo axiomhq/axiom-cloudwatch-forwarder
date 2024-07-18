@@ -11,7 +11,7 @@ Parameters:
     AllowedPattern: ".+" # required
   CloudWatchLogGroupsPrefix:
     Type: String
-    Description: The Prefix of CloudWatch log groups to trigger the Axiom CloudWatch Forwarder lambda.
+    Description: The prefix of the CloudWatch log groups that will trigger the Axiom CloudWatch Forwarder Lambda.
     Default: "" # all
   AxiomLambdaLogRetention:
     Type: "Number"
