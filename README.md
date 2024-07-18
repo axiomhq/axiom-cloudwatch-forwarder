@@ -13,10 +13,39 @@ Axiom CloudWatch Lambda uses the following CloudFormation stacks:
 1. [Create an Axiom account](https://app.axiom.co).
 2. Create a dataset in Axiom.
 3. Create an API token in Axiom with permissions to ingest data to the dataset you created.
-4. [Click this link to launch the Stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-forwarder&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-v1.0.0-cloudformation-stack.yaml).
+4. [Click this link to launch the Forwarder Stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-forwarder&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-v1.0.0-cloudformation-stack.yaml).
 5. Get the created Forwarder lambda ARN from the previous step, and use it to install the Subscriber stack in the next step.
-6. [Click this link to automatically subscribe to all existing log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber--v1.0.0cloudformation-stack.yaml).
+6. [Click this link to launch the Subscriber stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber-v1.0.0-cloudformation-stack.yaml) and automatically subscribe to all existing log groups. You can filter the log groups by one or a combination of names, regex pattern and a prefix.
 7. [Click this link to automatically subscribe to new log groups](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-log-groups-listener&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-log-groups-listener-v1.0.0-cloudformation-stack.yaml).
+
+
+## Removing subscription filters
+
+If later on, you wanted to remove subscription filters for one or multiple log groups, you can [launch the Unsubscriber stack](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-unsubscriber-v1.0.0-cloudformation-stack.yaml)
+
+The log group filtering works the same way as the subscriber stack. You can filter the log groups by one or a combination of names, regex pattern and a prefix.
+
+
+## Filtering CloudWatch log groups
+
+The Subscriber and Unsubscriber stacks allow you to filter the log groups by one or a combination of names, regex pattern and a prefix. Basically,
+You can whitelist a number of log groups. If you don't specify any filter, the stack will subscribe to all log groups. If a log group matches one of the filters, it will be subscribed to.
+
+**Example**
+
+Let's assume we have this list of log groups:
+
+```
+/aws/lambda/functionFoo
+/aws/lambda/functionBar
+/aws/eks/cluster/cluster1
+/aws/rds/instanceFoo
+```
+
+- To subscribe to the lambda log groups only, a prefix filter with the value of `/aws/lambda` would do the job.
+- To subscribe to eks and rds log groups, a list of names with the value of `/aws/eks/cluster/cluster1,/aws/rds/instanceFoo` would do the job.
+- To subscribe to the eks log group and all lambda log groups, a combination of prefix and names list would select them.
+
 
 ## Log Groups Listener architecture
 
