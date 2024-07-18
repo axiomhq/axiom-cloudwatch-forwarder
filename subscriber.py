@@ -22,12 +22,17 @@ log_group_pattern = os.getenv("LOG_GROUP_PATTERN", "")
 log_groups_return_limit = 50
 
 
-def build_groups_list(all_groups: list, names: list, pattern: str, prefix: str):
+def build_groups_list(
+    all_groups: list, names: list = None, pattern: str = None, prefix: str = None
+):
     # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
     groups = []
     for g in all_groups:
-        group = {"name": g["logGroupName"], "arn": g["arn"]}
-        if names is not None and group["name"] in names:
+        group = {"name": g["logGroupName"].strip(), "arn": g["arn"]}
+        if names is None and pattern is None and prefix is None:
+            groups.append(group)
+            continue
+        elif names is not None and group["name"] in names:
             groups.append(group)
             continue
         elif prefix is not None and group["name"].startswith(prefix):
@@ -135,8 +140,9 @@ def lambda_handler(event: dict, context=None):
         "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
     )
 
+    log_group_names_list = log_group_names.split(",")
     log_groups = build_groups_list(
-        get_log_groups(), log_group_names, log_group_pattern, log_group_prefix
+        get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
     )
 
     responseData = {}
