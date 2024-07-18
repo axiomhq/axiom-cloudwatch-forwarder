@@ -7,7 +7,7 @@ Parameters:
     AllowedPattern: ".+" # required
   AxiomCloudWatchForwarderLambdaARN:
     Type: String
-    Description: The ARN of the AWS Lambda function that is used to shi[] logs to Axiom.
+    Description: The ARN of the AWS Lambda function that is used to forward logs to Axiom.
     AllowedPattern: ".+" # required
   CloudWatchLogGroupsPrefix:
     Type: String
