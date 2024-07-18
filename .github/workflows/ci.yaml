@@ -25,3 +25,8 @@ jobs:
           yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./unsubscriber.py)\""  cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
           yq ".Resources.AxiomCloudWatchLogGroupsListener.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./listener.py)\""  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml
       - run: cat build/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stacks
+          path: build/*
+          retention-days: 1
