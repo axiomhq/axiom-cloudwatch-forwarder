@@ -42,7 +42,7 @@ Let's assume we have this list of log groups:
 /aws/rds/instanceFoo
 ```
 
-- To subscribe to the lambda log groups only, a prefix filter with the value of `/aws/lambda` would do the job.
+- To subscribe to the Lambda log groups exclusively, a prefix filter with the value of `/aws/lambda` would do the job.
 - To subscribe to eks and rds log groups, a list of names with the value of `/aws/eks/cluster/cluster1,/aws/rds/instanceFoo` would do the job.
 - To subscribe to the eks log group and all lambda log groups, a combination of prefix and names list would select them.
 
