@@ -51,7 +51,6 @@ def get_log_groups(nextToken=None):
             limit=log_groups_return_limit, nextToken=nextToken
         )
         all_groups.extend(resp["logGroups"])
-        # print(f'got ${len(all_groups)} groups')
         nextToken = resp["nextToken"] if "nextToken" in resp else None
 
     return all_groups
