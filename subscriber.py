@@ -70,20 +70,15 @@ def remove_permission(lambda_arn: str):
 
 
 def delete_subscription_filter(log_group_name: str):
-    try:
-        logger.info(f"Deleting subscription filter for {log_group_name}...")
+    logger.info(f"Deleting subscription filter for {log_group_name}...")
 
-        cloudwatch_logs_client.delete_subscription_filter(
-            logGroupName=log_group_name, filterName="%s-axiom" % log_group_name
-        )
+    cloudwatch_logs_client.delete_subscription_filter(
+        logGroupName=log_group_name, filterName="%s-axiom" % log_group_name
+    )
 
-        logger.info(
-            f"{log_group_name} subscription filter has been deleted successfully."
-        )
-
-    except Exception as e:
-        logger.error(f"Error deleting Subscription filter: {e}")
-        raise e
+    logger.info(
+        f"{log_group_name} subscription filter has been deleted successfully."
+    )
 
 
 def add_permission(region: str, account_id: str, lambda_arn: str):
@@ -102,23 +97,19 @@ def add_permission(region: str, account_id: str, lambda_arn: str):
 
 
 def create_subscription_filter(log_group_arn: str, lambda_arn: str):
-    try:
-        log_group_name = log_group_arn.split(":")[-2]
-        logger.info(f"Creating subscription filter for {log_group_name}...")
+    log_group_name = log_group_arn.split(":")[-2]
+    logger.info(f"Creating subscription filter for {log_group_name}...")
 
-        cloudwatch_logs_client.put_subscription_filter(
-            logGroupName=log_group_name,
-            filterName="%s-axiom" % log_group_name,
-            filterPattern="",
-            destinationArn=lambda_arn,
-            distribution="ByLogStream",
-        )
-        logger.info(
-            f"{log_group_name} subscription filter has been created successfully."
-        )
-    except Exception as e:
-        logger.error(f"Error create Subscription filter: {e}")
-        raise e
+    cloudwatch_logs_client.put_subscription_filter(
+        logGroupName=log_group_name,
+        filterName="%s-axiom" % log_group_name,
+        filterPattern="",
+        destinationArn=lambda_arn,
+        distribution="ByLogStream",
+    )
+    logger.info(
+        f"{log_group_name} subscription filter has been created successfully."
+    )
 
 
 def lambda_handler(event: dict, context=None):
@@ -154,8 +145,10 @@ def lambda_handler(event: dict, context=None):
 
             try:
                 delete_subscription_filter(group["name"])
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(
+                    f"failed to delete subscription filter for {group['name']}, ${str(e)}"
+                )
 
             try:
                 create_subscription_filter(
