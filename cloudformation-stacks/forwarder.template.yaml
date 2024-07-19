@@ -19,12 +19,20 @@ Parameters:
   LambdaFunctionName:
     Type: String
     Description: Name of the AWS Lambda function.
-    Default: axiom-cloudwatch-forwarder
+    Default:  !Join ["-", ["axiom-cloudwatch-forwarder", !Ref AWS::StackName]]
     AllowedPattern: ".+" # required
   DataTags:
     Type: String
     Description: Tags to be included with the data ingested into Axiom, e.g., <key1>=<value1>,<key2>=<value2>.
 Resources:
+  AxiomCloudWatchForwarderLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName:  !Join ["-", ["/aws/axiom/forwarder/", !Ref LambdaFunctionName]] 
+      RetentionInDays: 1
+      Tags:
+        - Key: "IsAxiomForwarder"
+          Value: True
   AxiomCloudWatchForwarderRole:
     Type: AWS::IAM::Role
     Properties:
@@ -57,6 +65,7 @@ Resources:
           AXIOM_DATASET: !Ref "AxiomDataset"
           AXIOM_URL: !Ref "AxiomURL"
           DATA_TAGS: !Ref DataTags
+          LOG_GROUP_NAME: !Ref AxiomCloudWatchForwarderLogGroup
 Outputs:
   AxiomCloudWatchForwarderARN:
     Description: The ARN of the created Forwarder Lambda

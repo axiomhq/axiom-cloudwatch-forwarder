@@ -20,6 +20,7 @@ log_group_names = os.getenv("LOG_GROUP_NAMES", "")
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
 log_group_pattern = os.getenv("LOG_GROUP_PATTERN", "")
 log_groups_return_limit = 50
+LAMBDA_STATEMENT_ID = "InvokePermissionForAllCloudWatchLogGroups"
 
 
 def build_groups_list(
@@ -65,7 +66,7 @@ def get_log_groups(nextToken=None):
 def remove_permission(lambda_arn: str):
     lambda_client.remove_permission(
         FunctionName=lambda_arn,
-        StatementId="axiom-cloudwatch-subscriber",
+        StatementId=LAMBDA_STATEMENT_ID,
     )
 
 
@@ -76,9 +77,7 @@ def delete_subscription_filter(log_group_name: str):
         logGroupName=log_group_name, filterName="%s-axiom" % log_group_name
     )
 
-    logger.info(
-        f"{log_group_name} subscription filter has been deleted successfully."
-    )
+    logger.info(f"{log_group_name} subscription filter has been deleted successfully.")
 
 
 def add_permission(region: str, account_id: str, lambda_arn: str):
@@ -87,11 +86,13 @@ def add_permission(region: str, account_id: str, lambda_arn: str):
         region,
         account_id,
     )
+
     lambda_client.add_permission(
         FunctionName=lambda_arn,
-        StatementId="axiom-cloudwatch-subscriber",
+        StatementId=LAMBDA_STATEMENT_ID,
         Action="lambda:InvokeFunction",
         Principal=f"logs.amazonaws.com",
+        SourceAccount=account_id,
         SourceArn=source_arn,
     )
 
@@ -107,9 +108,7 @@ def create_subscription_filter(log_group_arn: str, lambda_arn: str):
         destinationArn=lambda_arn,
         distribution="ByLogStream",
     )
-    logger.info(
-        f"{log_group_name} subscription filter has been created successfully."
-    )
+    logger.info(f"{log_group_name} subscription filter has been created successfully.")
 
 
 def lambda_handler(event: dict, context=None):
@@ -125,8 +124,6 @@ def lambda_handler(event: dict, context=None):
     except Exception as e:
         logger.error(f"Error removing permission: {e}")
 
-    add_permission(region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn)
-
     forwarder_lambda_group_name = (
         "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
     )
@@ -134,6 +131,10 @@ def lambda_handler(event: dict, context=None):
     log_group_names_list = log_group_names.split(",")
     log_groups = build_groups_list(
         get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
+    )
+
+    add_permission(
+        log_groups, region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn
     )
 
     responseData = {}
@@ -147,7 +148,7 @@ def lambda_handler(event: dict, context=None):
                 delete_subscription_filter(group["name"])
             except Exception as e:
                 logger.warning(
-                    f"failed to delete subscription filter for {group['name']}, ${str(e)}"
+                    f"failed to delete subscription filter for {group['name']}, {str(e)}"
                 )
 
             try:

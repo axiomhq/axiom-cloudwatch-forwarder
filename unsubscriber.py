@@ -64,9 +64,7 @@ def delete_subscription_filter(log_group_name: str):
         logGroupName=log_group_name, filterName="%s-axiom" % log_group_name
     )
 
-    logger.info(
-        f"{log_group_name} subscription filter has been deleted successfully."
-    )
+    logger.info(f"{log_group_name} subscription filter has been deleted successfully.")
 
 
 def lambda_handler(event: dict, context=None):
@@ -92,7 +90,9 @@ def lambda_handler(event: dict, context=None):
             try:
                 delete_subscription_filter(group["name"])
             except Exception as e:
-                logger.error(f"failed to delete subscription filter for {group['name']}, ${str(e)}")
+                logger.error(
+                    f"failed to delete subscription filter for {group['name']}, {str(e)}"
+                )
     except Exception as e:
         responseData["success"] = "False"
         responseData["body"] = str(e)
