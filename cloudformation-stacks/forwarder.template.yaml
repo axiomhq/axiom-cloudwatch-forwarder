@@ -16,24 +16,21 @@ Parameters:
     Type: String
     Description: The name of the Axiom dataset to which events will be forwarded.
     AllowedPattern: ".+" # required
-  LambdaFunctionName:
-    Type: String
-    Description: Name of the AWS Lambda function.
-    Default:  !Join ["-", ["axiom-cloudwatch-forwarder", !Ref AWS::StackName]]
-    AllowedPattern: ".+" # required
   DataTags:
     Type: String
     Description: Tags to be included with the data ingested into Axiom, e.g., <key1>=<value1>,<key2>=<value2>.
 Resources:
-  AxiomCloudWatchForwarderLogGroup:
-    Type: 'AWS::Logs::LogGroup'
+  ForwarderLogGroup:
+    Type: "AWS::Logs::LogGroup"
     Properties:
-      LogGroupName:  !Join ["-", ["/aws/axiom/forwarder/", !Ref LambdaFunctionName]] 
+      LogGroupName: !Sub
+        - "/aws/axiom/forwarder/${LambdaFunctionName}"
+        - LambdaFunctionName: !Ref ForwarderLambda
       RetentionInDays: 1
       Tags:
-        - Key: "IsAxiomForwarder"
-          Value: True
-  AxiomCloudWatchForwarderRole:
+        - Key: "Role"
+          Value: "AxiomCloudWatchForwarder"
+  ForwarderRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -46,10 +43,10 @@ Resources:
                 - lambda.amazonaws.com
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  AxiomCloudWatchForwarder:
+  ForwarderLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Ref LambdaFunctionName
+      FunctionName: !Join ["-", ["forwarder", !Ref AWS::StackName]]
       Runtime: python3.9
       Handler: index.lambda_handler
       Code:
@@ -57,16 +54,17 @@ Resources:
           # DO NOT EDIT
           # CI will replace these comments with the code from ./forwarder.py
       Role: !GetAtt
-        - AxiomCloudWatchForwarderRole
+        - ForwarderRole
         - Arn
+      LoggingConfig:
+        LogGroup: !Ref ForwarderLogGroup
       Environment:
         Variables:
           AXIOM_TOKEN: !Ref "AxiomToken"
           AXIOM_DATASET: !Ref "AxiomDataset"
           AXIOM_URL: !Ref "AxiomURL"
           DATA_TAGS: !Ref DataTags
-          LOG_GROUP_NAME: !Ref AxiomCloudWatchForwarderLogGroup
 Outputs:
-  AxiomCloudWatchForwarderARN:
+  ForwarderARN:
     Description: The ARN of the created Forwarder Lambda
-    Value: !GetAtt AxiomCloudWatchForwarder.Arn
+    Value: !GetAtt ForwarderLambda.Arn

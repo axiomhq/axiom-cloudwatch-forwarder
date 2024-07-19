@@ -20,7 +20,7 @@ jobs:
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
       - run: |-
           mkdir build
-          yq ".Resources.AxiomCloudWatchForwarder.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./forwarder.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
+          yq ".Resources.ForwarderLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./forwarder.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
           yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./subscriber.py)\""  cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
           yq ".Resources.UnsubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./unsubscriber.py)\""  cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
           yq ".Resources.AxiomCloudWatchLogGroupsListener.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./listener.py)\""  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml

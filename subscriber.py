@@ -141,7 +141,9 @@ def lambda_handler(event: dict, context=None):
     try:
         for group in log_groups:
             # skip the Forwarder lambda log group to avoid circular logging
-            if group["name"] == forwarder_lambda_group_name:
+            if group["name"] == forwarder_lambda_group_name or group["name"].startswith(
+                "/aws/axiom/forwarder/"
+            ):
                 continue
 
             try:
