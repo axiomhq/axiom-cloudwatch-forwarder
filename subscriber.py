@@ -133,9 +133,7 @@ def lambda_handler(event: dict, context=None):
         get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
     )
 
-    add_permission(
-        region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn
-    )
+    add_permission(region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn)
 
     responseData = {}
     try:
