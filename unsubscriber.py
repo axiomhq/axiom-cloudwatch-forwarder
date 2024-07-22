@@ -69,7 +69,12 @@ def delete_subscription_filter(log_group_name: str):
 
 def lambda_handler(event: dict, context=None):
     if axiom_cloudwatch_forwarder_lambda_arn is None:
-        raise Exception("AXIOM_CLOUDWATCH_LAMBDA_FORWARDER_ARN is not set")
+        responseData = {
+            "success": False,
+            "body": "AXIOM_CLOUDWATCH_LAMBDA_FORWARDER_ARN is not set",
+        }
+        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+        # raise Exception("AXIOM_CLOUDWATCH_LAMBDA_FORWARDER_ARN is not set")
 
     forwarder_lambda_group_name = (
         "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
@@ -96,13 +101,7 @@ def lambda_handler(event: dict, context=None):
     except Exception as e:
         responseData["success"] = "False"
         responseData["body"] = str(e)
-        if "ResponseURL" in event:
-            cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-        else:
-            raise e
+        cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
 
     responseData["success"] = "True"
-    if "ResponseURL" in event:
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
-    else:
-        return "ok"
+    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)

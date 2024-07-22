@@ -166,13 +166,7 @@ def lambda_handler(event: dict, context=None):
                 continue
     except Exception as e:
         responseData["success"] = "False"
-        if "ResponseURL" in event:
-            cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-        else:
-            raise e
+        cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
 
     responseData["success"] = "True"
-    if "ResponseURL" in event:
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
-    else:
-        return "ok"
+    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
