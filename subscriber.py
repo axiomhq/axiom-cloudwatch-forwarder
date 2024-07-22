@@ -17,9 +17,9 @@ lambda_client = boto3.client("lambda")
 axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
     "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN"
 )
-log_group_names = os.getenv("LOG_GROUP_NAMES", "")
-log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
-log_group_pattern = os.getenv("LOG_GROUP_PATTERN", "")
+log_group_names = os.getenv("LOG_GROUP_NAMES", None)
+log_group_prefix = os.getenv("LOG_GROUP_PREFIX", None)
+log_group_pattern = os.getenv("LOG_GROUP_PATTERN", None)
 log_groups_return_limit = 50
 
 
@@ -31,6 +31,12 @@ def build_groups_list(
 ):
     # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
     groups = []
+    # ensure filter params have correct values
+    if pattern == "":
+        pattern = None
+    elif prefix == "":
+        prefix = None
+
     for g in all_groups:
         group = {"name": g["logGroupName"].strip(), "arn": g["arn"]}
         if names is None and pattern is None and prefix is None:
@@ -110,13 +116,18 @@ def create_subscription_filter(log_group_arn: str, lambda_arn: str):
 
 
 def lambda_handler(event: dict, context=None):
-    if axiom_cloudwatch_forwarder_lambda_arn is None:
+    if (
+        axiom_cloudwatch_forwarder_lambda_arn is None
+        or axiom_cloudwatch_forwarder_lambda_arn == ""
+    ):
         raise Exception("AXIOM_CLOUDWATCH_LAMBDA_FORWARDER_ARN is not set")
 
     aws_account_id = context.invoked_function_arn.split(":")[4]
     region = os.getenv("AWS_REGION")
 
-    log_group_names_list = log_group_names.split(",")
+    log_group_names_list = (
+        log_group_names.split(",") if log_group_names is not None else []
+    )
     log_groups = build_groups_list(
         get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
     )
@@ -130,7 +141,7 @@ def lambda_handler(event: dict, context=None):
             continue
         # create invoke permission for lambda
         cleaned_name = "-".join(group["name"].split("/")[3:])
-        statement_id = f"invoke-permission-for_{cleaned_name}"
+        statement_id = f"invoke-permission-for-{cleaned_name}"
         # remove permission if exists
         try:
             remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
