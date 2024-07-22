@@ -14,10 +14,6 @@ Metadata:
           - CloudWatchLogGroupsPattern
 
 Parameters:
-  LambdaFunctionName:
-    Type: String
-    Description: The name of the Unsubscriber Lambda function.
-    Default: "unsubscriber"
   AxiomCloudWatchForwarderLambdaARN:
     Type: String
     Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to forward logs to Axiom.
@@ -54,8 +50,7 @@ Resources:
   UnsubscriberLogGroup:
     Type: "AWS::Logs::LogGroup"
     Properties:
-      LogGroupName: !Sub
-        - "/aws/axiom/${AWS::StackName}-${LambdaFunctionName}"
+      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}"
       RetentionInDays: 1
       Tags:
         - Key: "Role"
@@ -76,7 +71,7 @@ Resources:
   UnsubscriberLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-unsubscriber"
+      FunctionName: !Sub "${AWS::StackName}"
       Runtime: python3.9
       Handler: index.lambda_handler
       Timeout: 300

@@ -19,15 +19,11 @@ Parameters:
   DataTags:
     Type: String
     Description: Tags to be included with the data ingested into Axiom, e.g., <key1>=<value1>,<key2>=<value2>.
-  ForwarderLambdaName:
-    Type: String
-    Description: The name of the Forwarder Lambda function.
-    Default: "forwarder"
 Resources:
   ForwarderLogGroup:
     Type: "AWS::Logs::LogGroup"
     Properties:
-      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}-${ForwarderLambdaName}"
+      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}"
       RetentionInDays: 1
       Tags:
         - Key: "Role"
@@ -48,7 +44,7 @@ Resources:
   ForwarderLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Join ["-", [!Ref ForwarderLambdaName, !Ref AWS::StackName]]
+      FunctionName: !Ref AWS::StackName
       Runtime: python3.9
       Handler: index.lambda_handler
       Code:

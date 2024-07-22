@@ -133,9 +133,7 @@ def lambda_handler(event: dict, context=None):
         try:
             remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
         except Exception as e:
-            logger.warning(
-                f"failed to remove permission for {cleaned_name}: {str(e)}"
-            )
+            logger.warning(f"failed to remove permission for {cleaned_name}: {str(e)}")
 
         try:
             add_permission(
