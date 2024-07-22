@@ -53,6 +53,10 @@ Resources:
       LogGroupName: !Sub "/aws/axiom/${AWS::StackName}"
       RetentionInDays: 1
       Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Platform"
+          Value: "Axiom"
         - Key: "Role"
           Value: "AxiomCloudWatchSubscriber"
   SubscriberRole:
@@ -84,6 +88,15 @@ Resources:
         - Arn
       LoggingConfig:
         LogGroup: !Ref SubscriberLogGroup
+      Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Role"
+          Value: "AxiomCloudWatchSubscriber"
+        - Key: "Platform"
+          Value: "Axiom"
+        - Key: "ForwarderARN"
+          Value: !Ref "AxiomCloudWatchForwarderLambdaARN"
       Environment:
         Variables:
           AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"

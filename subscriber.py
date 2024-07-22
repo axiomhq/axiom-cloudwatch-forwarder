@@ -129,7 +129,7 @@ def lambda_handler(event: dict, context=None):
         if group["name"].startswith("/aws/axiom/"):
             continue
         # create invoke permission for lambda
-        cleaned_name = '-'.join(group["name"].split("/")[3:])
+        cleaned_name = "-".join(group["name"].split("/")[3:])
         statement_id = f"invoke-permission-for_{cleaned_name}"
         # remove permission if exists
         try:

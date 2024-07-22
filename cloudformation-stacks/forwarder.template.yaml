@@ -18,7 +18,7 @@ Parameters:
     AllowedPattern: ".+" # required
   DataTags:
     Type: String
-    Description: Tags to be included with the data ingested into Axiom, e.g., <key1>=<value1>,<key2>=<value2>.
+    Description: Tags to be included with the data ingested into Axiom, e.g., <Key1>=<value1>,<Key2>=<value2>.
 Resources:
   ForwarderLogGroup:
     Type: "AWS::Logs::LogGroup"
@@ -26,8 +26,10 @@ Resources:
       LogGroupName: !Sub "/aws/axiom/${AWS::StackName}"
       RetentionInDays: 1
       Tags:
-        - Key: "Role"
-          Value: "AxiomCloudWatchForwarder"
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Platform"
+          Value: "Axiom"
   ForwarderRole:
     Type: AWS::IAM::Role
     Properties:
@@ -41,6 +43,13 @@ Resources:
                 - lambda.amazonaws.com
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Role"
+          Value: "AxiomCloudWatchForwarder"
+        - Key: "Platform"
+          Value: "Axiom"
   ForwarderLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -56,6 +65,13 @@ Resources:
         - Arn
       LoggingConfig:
         LogGroup: !Ref ForwarderLogGroup
+      Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Role"
+          Value: "AxiomCloudWatchForwarder"
+        - Key: "Platform"
+          Value: "Axiom"
       Environment:
         Variables:
           AXIOM_TOKEN: !Ref "AxiomToken"
