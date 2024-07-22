@@ -116,19 +116,21 @@ def lambda_handler(event: dict, context=None):
     aws_account_id = context.invoked_function_arn.split(":")[4]
     region = os.getenv("AWS_REGION")
 
-    forwarder_lambda_group_name = (
-        "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
-    )
-
     log_group_names_list = log_group_names.split(",")
     log_groups = build_groups_list(
         get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
     )
 
+    # report number of log groups found
+    logger.info(f"will create subscription for {len(log_groups)} log groups")
+
     for group in log_groups:
+        # skip the Forwarder lambda log group to avoid circular logging
+        if group["name"].startswith("/aws/axiom/"):
+            continue
         # create invoke permission for lambda
-        cleaned_name = group["name"].split("/")[-1].replace("-", "_")
-        statement_id = f"InvokePermissionFor{cleaned_name}"
+        cleaned_name = '-'.join(group["name"].split("/")[3:])
+        statement_id = f"invoke-permission-for_{cleaned_name}"
         # remove permission if exists
         try:
             remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
@@ -143,35 +145,21 @@ def lambda_handler(event: dict, context=None):
             logger.error(f"Error removing/adding permission for {cleaned_name}: {e}")
             continue
 
-    responseData = {}
-    try:
-        for group in log_groups:
-            # skip the Forwarder lambda log group to avoid circular logging
-            if group["name"] == forwarder_lambda_group_name or group["name"].startswith(
-                "/aws/axiom/"
-            ):
-                continue
+        try:
+            delete_subscription_filter(group["name"])
+        except Exception as e:
+            logger.warning(
+                f"failed to delete subscription filter for {group['name']}, {str(e)}"
+            )
 
-            try:
-                delete_subscription_filter(group["name"])
-            except Exception as e:
-                logger.warning(
-                    f"failed to delete subscription filter for {group['name']}, {str(e)}"
-                )
+        try:
+            create_subscription_filter(
+                group["arn"], axiom_cloudwatch_forwarder_lambda_arn
+            )
+        except cloudwatch_logs_client.exceptions.LimitExceededException as error:
+            logger.error("failed to create subscription filter for: %s" % group["name"])
+            logger.error(error)
+            continue
 
-            try:
-                create_subscription_filter(
-                    group["arn"], axiom_cloudwatch_forwarder_lambda_arn
-                )
-            except cloudwatch_logs_client.exceptions.LimitExceededException as error:
-                logger.error(
-                    "failed to create subscription filter for: %s" % group["name"]
-                )
-                logger.error(error)
-                continue
-    except Exception as e:
-        responseData["success"] = "False"
-        cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-
-    responseData["success"] = "True"
+    responseData = {"success": True}
     cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
