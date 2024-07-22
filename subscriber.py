@@ -3,6 +3,7 @@ import boto3
 import os
 import logging
 import cfnresponse
+from typing import Optional
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -20,11 +21,13 @@ log_group_names = os.getenv("LOG_GROUP_NAMES", "")
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
 log_group_pattern = os.getenv("LOG_GROUP_PATTERN", "")
 log_groups_return_limit = 50
-LAMBDA_STATEMENT_ID = "InvokePermissionForAllCloudWatchLogGroups"
 
 
 def build_groups_list(
-    all_groups: list, names: list = None, pattern: str = None, prefix: str = None
+    all_groups: list,
+    names: Optional[list] = None,
+    pattern: Optional[str] = None,
+    prefix: Optional[str] = None,
 ):
     # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
     groups = []
@@ -63,13 +66,6 @@ def get_log_groups(nextToken=None):
     return all_groups
 
 
-def remove_permission(lambda_arn: str):
-    lambda_client.remove_permission(
-        FunctionName=lambda_arn,
-        StatementId=LAMBDA_STATEMENT_ID,
-    )
-
-
 def delete_subscription_filter(log_group_name: str):
     logger.info(f"Deleting subscription filter for {log_group_name}...")
 
@@ -80,20 +76,22 @@ def delete_subscription_filter(log_group_name: str):
     logger.info(f"{log_group_name} subscription filter has been deleted successfully.")
 
 
-def add_permission(region: str, account_id: str, lambda_arn: str):
+def add_permission(statement_id: str, log_group_arn: str, lambda_arn: str):
     logger.info(f"Creating permission for {lambda_arn}...")
-    source_arn = "arn:aws:logs:%s:%s:log-group:*:*" % (
-        region,
-        account_id,
-    )
 
     lambda_client.add_permission(
         FunctionName=lambda_arn,
-        StatementId=LAMBDA_STATEMENT_ID,
+        StatementId=statement_id,
         Action="lambda:InvokeFunction",
         Principal=f"logs.amazonaws.com",
-        SourceAccount=account_id,
-        SourceArn=source_arn,
+        SourceArn=log_group_arn,
+    )
+
+
+def remove_permission(statement_id: str, lambda_arn: str):
+    lambda_client.remove_permission(
+        FunctionName=lambda_arn,
+        StatementId=statement_id,
     )
 
 
@@ -118,12 +116,6 @@ def lambda_handler(event: dict, context=None):
     aws_account_id = context.invoked_function_arn.split(":")[4]
     region = os.getenv("AWS_REGION")
 
-    # create permission for lambda
-    try:
-        remove_permission(axiom_cloudwatch_forwarder_lambda_arn)
-    except Exception as e:
-        logger.error(f"Error removing permission: {e}")
-
     forwarder_lambda_group_name = (
         "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
     )
@@ -133,7 +125,18 @@ def lambda_handler(event: dict, context=None):
         get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
     )
 
-    add_permission(region, aws_account_id, axiom_cloudwatch_forwarder_lambda_arn)
+    for group in log_groups:
+        # create invoke permission for lambda
+        cleaned_name = group["name"].replace("/-", "_")
+        statement_id = f"InvokePermissionFor{cleaned_name}"
+        try:
+            remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
+            add_permission(
+                statement_id, group["arn"], axiom_cloudwatch_forwarder_lambda_arn
+            )
+        except Exception as e:
+            logger.error(f"Error removing/adding permission for {cleaned_name}: {e}")
+            continue
 
     responseData = {}
     try:
