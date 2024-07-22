@@ -54,7 +54,7 @@ Resources:
   SubscriberLogGroup:
     Type: "AWS::Logs::LogGroup"
     Properties:
-      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}}-${LambdaFunctionName}"
+      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}-${LambdaFunctionName}"
       RetentionInDays: 1
       Tags:
         - Key: "Role"

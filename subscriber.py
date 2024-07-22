@@ -127,10 +127,17 @@ def lambda_handler(event: dict, context=None):
 
     for group in log_groups:
         # create invoke permission for lambda
-        cleaned_name = group["name"].replace("/-", "_")
+        cleaned_name = group["name"].split("/")[-1].replace("-", "_")
         statement_id = f"InvokePermissionFor{cleaned_name}"
+        # remove permission if exists
         try:
             remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
+        except Exception as e:
+            logger.warning(
+                f"failed to remove permission for {cleaned_name}: {str(e)}"
+            )
+
+        try:
             add_permission(
                 statement_id, group["arn"], axiom_cloudwatch_forwarder_lambda_arn
             )
@@ -143,7 +150,7 @@ def lambda_handler(event: dict, context=None):
         for group in log_groups:
             # skip the Forwarder lambda log group to avoid circular logging
             if group["name"] == forwarder_lambda_group_name or group["name"].startswith(
-                "/aws/axiom/forwarder/"
+                "/aws/axiom/"
             ):
                 continue
 

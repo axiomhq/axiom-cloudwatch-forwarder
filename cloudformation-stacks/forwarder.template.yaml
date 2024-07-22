@@ -67,6 +67,6 @@ Resources:
           AXIOM_URL: !Ref "AxiomURL"
           DATA_TAGS: !Ref DataTags
 Outputs:
-  ForwarderARN:
+  ForwarderLambdaARN:
     Description: The ARN of the created Forwarder Lambda
     Value: !GetAtt ForwarderLambda.Arn
