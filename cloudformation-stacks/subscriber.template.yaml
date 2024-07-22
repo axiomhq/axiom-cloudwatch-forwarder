@@ -6,7 +6,7 @@ Metadata:
           default: "Forwarder lambda"
         Parameters:
           - AxiomCloudWatchForwarderLambdaARN
-      - Label: 
+      - Label:
           default: "Which log groups to subscribe to?"
         Parameters:
           - CloudWatchLogGroupsNames
@@ -14,6 +14,10 @@ Metadata:
           - CloudWatchLogGroupsPattern
 
 Parameters:
+  LambdaFunctionName:
+    Type: String
+    Description: The name of the Subscriber Lambda function.
+    Default: "subscriber"
   AxiomCloudWatchForwarderLambdaARN:
     Type: String
     Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to ship logs to Axiom.
@@ -43,16 +47,14 @@ Resources:
               - lambda:AddPermission
               - lambda:RemovePermission
             Effect: Allow
-            Resource: '*'
+            Resource: "*"
       PolicyName: axiom-cloudwatch-subscriber-lambda-policy
       Roles:
-        - !Ref 'SubscriberRole'
+        - !Ref "SubscriberRole"
   SubscriberLogGroup:
     Type: "AWS::Logs::LogGroup"
     Properties:
-      LogGroupName: !Sub
-        - "/aws/axiom/forwarder/${LambdaFunctionName}"
-        - LambdaFunctionName: !Ref SubscriberLambda
+      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}}-${LambdaFunctionName}"
       RetentionInDays: 1
       Tags:
         - Key: "Role"
@@ -63,17 +65,17 @@ Resources:
       AssumeRolePolicyDocument:
         Statement:
           - Action:
-              - 'sts:AssumeRole'
+              - "sts:AssumeRole"
             Effect: Allow
             Principal:
               Service:
                 - lambda.amazonaws.com
       ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   SubscriberLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-subscriber"
+      FunctionName: !Sub "${AWS::StackName}-${LambdaFunctionName}"
       Runtime: python3.9
       Handler: index.lambda_handler
       Timeout: 300
@@ -88,10 +90,10 @@ Resources:
         LogGroup: !Ref SubscriberLogGroup
       Environment:
         Variables:
-          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref 'AxiomCloudWatchForwarderLambdaARN'
-          LOG_GROUP_NAMES: !Ref 'CloudWatchLogGroupsNames'
-          LOG_GROUP_PREFIX: !Ref 'CloudWatchLogGroupsPrefix'
-          LOG_GROUP_PATTERN: !Ref 'CloudWatchLogGroupsPattern'
+          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"
+          LOG_GROUP_NAMES: !Ref "CloudWatchLogGroupsNames"
+          LOG_GROUP_PREFIX: !Ref "CloudWatchLogGroupsPrefix"
+          LOG_GROUP_PATTERN: !Ref "CloudWatchLogGroupsPattern"
   SubscriberInvoker:
     Type: AWS::CloudFormation::CustomResource
     DependsOn: SubscriberLambda
