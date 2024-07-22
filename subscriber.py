@@ -83,7 +83,7 @@ def delete_subscription_filter(log_group_name: str):
 
 
 def add_permission(statement_id: str, log_group_arn: str, lambda_arn: str):
-    logger.info(f"Creating permission for {lambda_arn}...")
+    logger.info(f"Creating permission for {log_group_arn}...")
 
     lambda_client.add_permission(
         FunctionName=lambda_arn,
@@ -103,11 +103,13 @@ def remove_permission(statement_id: str, lambda_arn: str):
 
 def create_subscription_filter(log_group_arn: str, lambda_arn: str):
     log_group_name = log_group_arn.split(":")[-2]
-    logger.info(f"Creating subscription filter for {log_group_name}...")
+    logger.info(f"Creating subscription filter for {log_group_name}")
+
+    filter_name = "%s-axiom" % log_group_name
 
     cloudwatch_logs_client.put_subscription_filter(
         logGroupName=log_group_name,
-        filterName="%s-axiom" % log_group_name,
+        filterName=filter_name,
         filterPattern="",
         destinationArn=lambda_arn,
         distribution="ByLogStream",
@@ -142,6 +144,14 @@ def lambda_handler(event: dict, context=None):
         # create invoke permission for lambda
         cleaned_name = "-".join(group["name"].split("/")[3:])
         statement_id = f"invoke-permission-for-{cleaned_name}"
+
+        # remove subscription filter if exists
+        try:
+            delete_subscription_filter(group["name"])
+        except Exception as e:
+            logger.warning(
+                f"failed to delete subscription filter for {group['name']}, {str(e)}"
+            )
         # remove permission if exists
         try:
             remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
@@ -155,13 +165,6 @@ def lambda_handler(event: dict, context=None):
         except Exception as e:
             logger.error(f"Error removing/adding permission for {cleaned_name}: {e}")
             continue
-
-        try:
-            delete_subscription_filter(group["name"])
-        except Exception as e:
-            logger.warning(
-                f"failed to delete subscription filter for {group['name']}, {str(e)}"
-            )
 
         try:
             create_subscription_filter(
