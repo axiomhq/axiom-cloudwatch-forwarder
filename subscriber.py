@@ -29,14 +29,15 @@ def build_groups_list(
     pattern: Optional[str] = None,
     prefix: Optional[str] = None,
 ):
+    # ensure filter params have correct values
+    if not names:
+        names = None
+    if not pattern:
+        pattern = None
+    if not prefix:
+        prefix = None
     # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
     groups = []
-    # ensure filter params have correct values
-    if pattern == "":
-        pattern = None
-    elif prefix == "":
-        prefix = None
-
     for g in all_groups:
         group = {"name": g["logGroupName"].strip(), "arn": g["arn"]}
         if names is None and pattern is None and prefix is None:

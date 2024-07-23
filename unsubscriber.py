@@ -30,9 +30,11 @@ def build_groups_list(
     prefix: Optional[str] = None,
 ):
     # ensure filter params have correct values
-    if pattern == "":
+    if not names:
+        names = None
+    if not pattern:
         pattern = None
-    elif prefix == "":
+    if not prefix:
         prefix = None
     # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
     groups = []
