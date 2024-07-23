@@ -146,6 +146,18 @@ def lambda_handler(event: dict, context=None):
         cleaned_name = "-".join(group["name"].split("/")[3:])
         statement_id = f"invoke-permission-for-{cleaned_name}"
 
+        # if the log group already have a subscription filter, skip it
+        try:
+            response = cloudwatch_logs_client.describe_subscription_filters(logGroupName=group['name'])
+            print(response)
+            # TODO: improve the Subscription filters check
+            if len(response['subscriptionFilters']) > 0:
+                logger.info(f"Subscription filter already exists for {cleaned_name}")
+                continue
+        except Exception as e:
+            logger.error(f"Error checking subscription filter for {cleaned_name}: {e}")
+            continue
+
         # remove subscription filter if exists
         try:
             delete_subscription_filter(group["name"])
