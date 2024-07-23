@@ -119,6 +119,11 @@ def create_subscription_filter(log_group_arn: str, lambda_arn: str):
 
 
 def lambda_handler(event: dict, context=None):
+    # handle deletion of the stack
+    if event["RequestType"] == "Delete":
+        cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"])
+        return
+
     if (
         axiom_cloudwatch_forwarder_lambda_arn is None
         or axiom_cloudwatch_forwarder_lambda_arn == ""
@@ -148,10 +153,12 @@ def lambda_handler(event: dict, context=None):
 
         # if the log group already have a subscription filter, skip it
         try:
-            response = cloudwatch_logs_client.describe_subscription_filters(logGroupName=group['name'])
+            response = cloudwatch_logs_client.describe_subscription_filters(
+                logGroupName=group["name"]
+            )
             print(response)
             # TODO: improve the Subscription filters check
-            if len(response['subscriptionFilters']) > 0:
+            if len(response["subscriptionFilters"]) > 0:
                 logger.info(f"Subscription filter already exists for {cleaned_name}")
                 continue
         except Exception as e:
