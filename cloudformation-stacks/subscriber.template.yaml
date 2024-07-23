@@ -40,6 +40,7 @@ Resources:
               - logs:DeleteSubscriptionFilter
               - logs:PutSubscriptionFilter
               - logs:DescribeLogGroups
+              - logs:DescribeSubscriptionFilters
               - lambda:AddPermission
               - lambda:RemovePermission
             Effect: Allow

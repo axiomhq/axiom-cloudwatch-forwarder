@@ -121,7 +121,9 @@ def create_subscription_filter(log_group_arn: str, lambda_arn: str):
 def lambda_handler(event: dict, context=None):
     # handle deletion of the stack
     if event["RequestType"] == "Delete":
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"])
+        cfnresponse.send(
+            event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
+        )
         return
 
     if (
