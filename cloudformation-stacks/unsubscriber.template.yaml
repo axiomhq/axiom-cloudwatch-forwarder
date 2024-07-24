@@ -49,14 +49,17 @@ Resources:
         - !Ref "UnsubscriberRole"
   UnsubscriberLogGroup:
     Type: "AWS::Logs::LogGroup"
+    DeletionPolicy: Delete
     Properties:
-      LogGroupName: !Sub
-        - "/aws/axiom/forwarder/${LambdaFunctionName}"
-        - LambdaFunctionName: !Ref UnsubscriberLambda
+      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}"
       RetentionInDays: 1
       Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
         - Key: "Role"
           Value: "AxiomCloudWatchUnsubscriber"
+        - Key: "Platform"
+          Value: "Axiom"
   UnsubscriberRole:
     Type: AWS::IAM::Role
     Properties:
@@ -73,7 +76,7 @@ Resources:
   UnsubscriberLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-unsubscriber"
+      FunctionName: !Sub "${AWS::StackName}"
       Runtime: python3.9
       Handler: index.lambda_handler
       Timeout: 300
@@ -86,6 +89,13 @@ Resources:
         - Arn
       LoggingConfig:
         LogGroup: !Ref UnsubscriberLogGroup
+      Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Role"
+          Value: "AxiomCloudWatchUnsubscriber"
+        - Key: "Platform"
+          Value: "Axiom"
       Environment:
         Variables:
           AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"
