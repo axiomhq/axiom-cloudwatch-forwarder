@@ -110,36 +110,45 @@ def lambda_handler(event: dict, context=None):
         get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
     )
 
+    report = {
+        "log_groups_count": len(log_groups),
+        "matched_log_groups": [],
+        "added_groups": [],
+        "added_groups_count": 0,
+        "errors": {},
+    }
+
     responseData = {}
-    try:
-        for group in log_groups:
-            # skip the Forwarder lambda log group to avoid circular logging
-            if group["name"] == forwarder_lambda_group_name:
-                continue
+    for group in log_groups:
+        # skip the Forwarder lambda log group to avoid circular logging
+        if group["name"] == forwarder_lambda_group_name:
+            continue
 
-            try:
-                delete_subscription_filter(group["name"])
-            except Exception as e:
-                logger.error(
-                    f"failed to delete subscription filter for {group['name']}, {str(e)}"
-                )
-                pass
+        report["matched_log_groups"].append(group["name"])
+        report["errors"][group["name"]] = []
 
-            # remove the permission from the lambda
-            cleaned_name = "-".join(group["name"].split("/")[3:])
-            statement_id = f"invoke-permission-for-{cleaned_name}"
-            try:
-                remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
-            except Exception as e:
-                logger.warning(
-                    f"failed to remove permission for {cleaned_name}: {str(e)}"
-                )
+        try:
+            delete_subscription_filter(group["name"])
+        except Exception as e:
+            report["errors"][group["name"]].append(str(e))
+            logger.error(
+                f"failed to delete subscription filter for {group['name']}, {str(e)}"
+            )
 
-    except Exception as e:
-        responseData["success"] = "False"
-        responseData["body"] = str(e)
-        cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-        return
+        # remove the permission from the lambda
+        cleaned_name = "-".join(group["name"].split("/")[3:])
+        statement_id = f"invoke-permission-for-{cleaned_name}"
+        try:
+            remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
+            report["added_groups_count"] += 1
+        except Exception as e:
+            report["errors"][group["name"]].append(str(e))
+            logger.error(f"failed to remove permission for {cleaned_name}: {str(e)}")
+            continue
+
+        logger.info(
+            f"unsubsribed from {report['added_groups_count']} log groups out of {len(report['matched_log_groups'])} groups"
+        )
 
     responseData["success"] = "True"
     cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
