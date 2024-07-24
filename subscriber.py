@@ -145,10 +145,17 @@ def lambda_handler(event: dict, context=None):
     # report number of log groups found
     logger.info(f"will create subscription for {len(log_groups)} log groups")
 
+    report = {
+        "log_groups_count": len(log_groups),
+        "matched_log_groups": [],
+        "succeeded": [],
+        "errors": {},
+    }
     for group in log_groups:
         # skip the Forwarder lambda log group to avoid circular logging
         if group["name"].startswith("/aws/axiom/"):
             continue
+
         # create invoke permission for lambda
         cleaned_name = "-".join(group["name"].split("/")[3:])
         statement_id = f"invoke-permission-for-{cleaned_name}"
@@ -167,10 +174,14 @@ def lambda_handler(event: dict, context=None):
             logger.error(f"Error checking subscription filter for {cleaned_name}: {e}")
             continue
 
+        report["matched_log_groups"].append(group["name"])
+        report["errors"][group["name"]] = []
+
         # remove subscription filter if exists
         try:
             delete_subscription_filter(group["name"])
         except Exception as e:
+            report["errors"][group["name"]].append(str(e))
             logger.warning(
                 f"failed to delete subscription filter for {group['name']}, {str(e)}"
             )
@@ -178,6 +189,7 @@ def lambda_handler(event: dict, context=None):
         try:
             remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
         except Exception as e:
+            report["errors"][group["name"]].append(str(e))
             logger.warning(f"failed to remove permission for {cleaned_name}: {str(e)}")
 
         try:
@@ -185,6 +197,7 @@ def lambda_handler(event: dict, context=None):
                 statement_id, group["arn"], axiom_cloudwatch_forwarder_lambda_arn
             )
         except Exception as e:
+            report["errors"][group["name"]].append(str(e))
             logger.error(f"Error removing/adding permission for {cleaned_name}: {e}")
             continue
 
@@ -192,10 +205,16 @@ def lambda_handler(event: dict, context=None):
             create_subscription_filter(
                 group["arn"], axiom_cloudwatch_forwarder_lambda_arn
             )
+            report["succeeded"] += 1
         except cloudwatch_logs_client.exceptions.LimitExceededException as error:
+            report["errors"][group["name"]].append(str(error))
             logger.error("failed to create subscription filter for: %s" % group["name"])
             logger.error(error)
             continue
 
+    logger.info(
+        f"created subscription for {len(report['succeeded'])} log groups out of {len(report['matched_log_groups'])} groups"
+    )
+    logger.info(report)
     responseData = {"success": True}
     cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
