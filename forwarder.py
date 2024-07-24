@@ -162,7 +162,7 @@ def get_log_groups(nextToken=None):
 
 def lambda_handler(event: dict, context=None):
     # handle deletion of the stack
-    if event["RequestType"] == "Delete":
+    if "RequestType" in event and event["RequestType"] == "Delete":
         # remove all related subscription filters, unforutunately deleting the lambda will
         # not clear the subscription filters
         # We can do so by looping over log groups and deleting the subscription filters

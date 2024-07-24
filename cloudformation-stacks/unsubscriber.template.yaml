@@ -49,10 +49,10 @@ Resources:
         - !Ref "UnsubscriberRole"
   UnsubscriberLogGroup:
     Type: "AWS::Logs::LogGroup"
+    DeletionPolicy: Delete
     Properties:
       LogGroupName: !Sub "/aws/axiom/${AWS::StackName}"
       RetentionInDays: 1
-      DeletionPolicy: Delete
       Tags:
         - Key: "PartOf"
           Value: !Ref AWS::StackName

@@ -143,12 +143,13 @@ def lambda_handler(event: dict, context=None):
     )
 
     # report number of log groups found
-    logger.info(f"will create subscription for {len(log_groups)} log groups")
+    logger.info(f"Found {len(log_groups)} log groups that matches the criteria.")
 
     report = {
         "log_groups_count": len(log_groups),
         "matched_log_groups": [],
-        "succeeded": [],
+        "added_groups": [],
+        "added_groups_count": 0,
         "errors": {},
     }
     for group in log_groups:
@@ -160,28 +161,29 @@ def lambda_handler(event: dict, context=None):
         cleaned_name = "-".join(group["name"].split("/")[3:])
         statement_id = f"invoke-permission-for-{cleaned_name}"
 
+        report["matched_log_groups"].append(group["name"])
+        report["errors"][group["name"]] = []
+
         # if the log group already have a subscription filter, skip it
         try:
             response = cloudwatch_logs_client.describe_subscription_filters(
                 logGroupName=group["name"]
             )
-            print(response)
             # TODO: improve the Subscription filters check
             if len(response["subscriptionFilters"]) > 0:
+                report["errors"][group["name"]].append(
+                    "Subscription filter already exists"
+                )
                 logger.info(f"Subscription filter already exists for {cleaned_name}")
                 continue
         except Exception as e:
             logger.error(f"Error checking subscription filter for {cleaned_name}: {e}")
             continue
 
-        report["matched_log_groups"].append(group["name"])
-        report["errors"][group["name"]] = []
-
         # remove subscription filter if exists
         try:
             delete_subscription_filter(group["name"])
         except Exception as e:
-            report["errors"][group["name"]].append(str(e))
             logger.warning(
                 f"failed to delete subscription filter for {group['name']}, {str(e)}"
             )
@@ -189,7 +191,6 @@ def lambda_handler(event: dict, context=None):
         try:
             remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
         except Exception as e:
-            report["errors"][group["name"]].append(str(e))
             logger.warning(f"failed to remove permission for {cleaned_name}: {str(e)}")
 
         try:
@@ -205,15 +206,24 @@ def lambda_handler(event: dict, context=None):
             create_subscription_filter(
                 group["arn"], axiom_cloudwatch_forwarder_lambda_arn
             )
-            report["succeeded"] += 1
+            report["added_groups_count"] += 1
+            report["added_groups"].append(group["name"])
         except cloudwatch_logs_client.exceptions.LimitExceededException as error:
+            report["errors"][group["name"]].append(str(error))
+            logger.error(
+                "failed to create subscription filter for: %s. Cannot create more log groups. Create another Forwarder with different log groups configuration."
+                % group["name"]
+            )
+            logger.error(error)
+            break
+        except Exception as error:
             report["errors"][group["name"]].append(str(error))
             logger.error("failed to create subscription filter for: %s" % group["name"])
             logger.error(error)
             continue
 
     logger.info(
-        f"created subscription for {len(report['succeeded'])} log groups out of {len(report['matched_log_groups'])} groups"
+        f"created subscription for {report['added_groups_count']} log groups out of {len(report['matched_log_groups'])} groups"
     )
     logger.info(report)
     responseData = {"success": True}
