@@ -43,6 +43,8 @@ Assume we have the following list of log groups:
 - To subscribe to the Lambda log groups exclusively, a prefix filter with the value of `/aws/lambda` is a good choice.
 - To subscribe to EKS and RDS log groups, a list of names with the value of `/aws/eks/cluster/cluster-1,/aws/rds/instance-baz` would work well.
 - To subscribe to the EKS log group and all Lambda log groups, a combination of prefix and names list would select them.
+- To use the regex filter, you can use a regular expression to match the log group names. For example, `\/aws\/lambda\/.*` would match all Lambda log groups.
+- To subscribe to all log groups, leave the filters empty.
 
 ## Listener architecture
 

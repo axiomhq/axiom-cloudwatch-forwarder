@@ -42,7 +42,7 @@ resource "axiom_dataset" "lambda_forwarder" {
 }
 ```
 
-4. Create a CloudFormation stack resource and add the stack URL as a template body:
+4. Create a CloudFormation stack resource and add the **Forwarder** stack URL as a template body:
 
 ```hcl
 resource "aws_cloudformation_stack" "axiom_cloudwatch_lambda_forwarder" {
@@ -80,3 +80,5 @@ resource "aws_cloudformation_stack" "axiom_cloudwatch_lambda_subscriber" {
   template_body = file("subscriber-stack-url")
 }
 ```
+
+**note:** To use the regex pattern properly, you need to escape the backslashes. For example, to match all log groups starting with `/aws/lambda/` you would use `^\\/aws\\/lambda\\/.+`.
