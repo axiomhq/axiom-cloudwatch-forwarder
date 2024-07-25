@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0]
+
+This version revises the naming of CloudFormation stack elements to make their purpose clearer, and allows greater flexibility in filtering log groups that are applied as subscription filters to the (newly named) Lambda Forwarder, now using a combination of names, prefix and regular expression. It also introduced versioning to the CloudFormation stacks so breaking changes do not impact users.
+
+
 ## [0.8.0] - 2024-04-09
 
 ### Enhance
