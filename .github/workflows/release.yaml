@@ -24,7 +24,7 @@ jobs:
           yq ".Resources.AxiomCloudWatchForwarder.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./forwarder.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-v${{ github.ref_name }}-cloudformation-stack.yaml
           yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./subscriber.py)\"" cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-v${{ github.ref_name }}-cloudformation-stack.yaml
           yq ".Resources.UnsubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./unsubscriber.py)\"" cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-v${{ github.ref_name }}-cloudformation-stack.yaml
-          yq ".Resources.AxiomCloudWatchLogGroupsListener.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./listener.py)\""  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-v${{ github.ref_name }}-cloudformation-stack.yaml
+          yq ".Resources.ListenerLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./listener.py)\""  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-v${{ github.ref_name }}-cloudformation-stack.yaml
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
