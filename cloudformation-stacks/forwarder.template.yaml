@@ -1,6 +1,5 @@
 Description: Axiom CloudWatch Forwarder Lambda
 AWSTemplateFormatVersion: 2010-09-09
-Transform: "AWS::LanguageExtensions"
 Parameters:
   AxiomToken:
     Description: The API token with ingest permission to dataset. Must start with xaat- or xait-.
