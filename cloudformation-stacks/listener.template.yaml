@@ -78,6 +78,15 @@ Resources:
       IsLogging: true
       S3BucketName: !Ref ListenerS3Bucket
       TrailName: !Join ["-", [!Ref AWS::StackName, { "Ref": "AWS::AccountId" }]]
+      AdvancedEventSelectors:
+        - Name: "LogGroupCreationEvents"
+          FieldSelectors:
+            - Field: "eventSource"
+              Equals:
+                - "logs.amazonaws.com"
+            - Field: "eventName"
+              Equals:
+                - "CreateLogGroup"
   ListenerEventRule:
     DependsOn: ListenerLambda
     Type: AWS::Events::Rule
