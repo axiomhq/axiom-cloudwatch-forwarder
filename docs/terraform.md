@@ -32,7 +32,7 @@ terraform {
 ```hcl
 provider "axiom" {
   # Configuration options
-  base_url ="https://api.axiom.co"
+  base_url  = "https://api.axiom.co"
   api_token = "xaat-****-****"
 }
 
