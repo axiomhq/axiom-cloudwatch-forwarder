@@ -1,16 +1,19 @@
+import re
+import os
 import base64
 import gzip
 import json
+import boto3
 import logging
-import os
-import re
 import urllib.request
+import cfnresponse
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
 
+cloudwatch_logs_client = boto3.client("logs")
 
 # Standard out from Lambdas.
 std_matcher = re.compile("\d\d\d\d-\d\d-\d\d\S+\s+(?P<requestID>\S+)")
@@ -42,7 +45,6 @@ report_matcher = re.compile(
 axiom_url = os.getenv("AXIOM_URL", "https://api.axiom.co").strip("/")
 axiom_token = os.getenv("AXIOM_TOKEN")
 axiom_dataset = os.getenv("AXIOM_DATASET")
-disable_json = os.getenv("DISABLE_JSON", "false") == "true"
 data_tags_string = os.getenv("DATA_TAGS")
 data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
@@ -142,7 +144,52 @@ def split_log_group(log_group: str):
     }
 
 
+def get_log_groups(nextToken=None):
+    # check docs:
+    # 1. boto3 https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
+    # 2. AWS API https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DescribeLogGroups.html#API_DescribeLogGroups_RequestSyntax
+    resp = cloudwatch_logs_client.describe_log_groups(limit=50)
+    all_groups = resp["logGroups"]
+    nextToken = resp["nextToken"]
+    # continue fetching log groups until nextToken is None
+    while nextToken is not None:
+        resp = cloudwatch_logs_client.describe_log_groups(limit=50, nextToken=nextToken)
+        all_groups.extend(resp["logGroups"])
+        nextToken = resp["nextToken"] if "nextToken" in resp else None
+
+    return all_groups
+
+
 def lambda_handler(event: dict, context=None):
+    # handle deletion of the stack
+    if "RequestType" in event and event["RequestType"] == "Delete":
+        # remove all related subscription filters, unforutunately deleting the lambda will
+        # not clear the subscription filters
+        # We can do so by looping over log groups and deleting the subscription filters
+        # 1. get lambda arn
+        fn_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME")
+        lambda_client = boto3.client("lambda")
+        response = lambda_client.get_function_configuration(FunctionName=fn_name)
+        # 2. get log groups
+        log_groups = get_log_groups()
+        for group in log_groups:
+            # 3. get subscription filters
+            filters = cloudwatch_logs_client.describe_subscription_filters(
+                logGroupName=group["logGroupName"]
+            )
+            for filter in filters["subscriptionFilters"]:
+                # 4. check if filter is related to the lambda
+                if filter["destinationArn"] == response["FunctionArn"]:
+                    # 5. delete subscription filter
+                    cloudwatch_logs_client.delete_subscription_filter(
+                        logGroupName=group["logGroupName"],
+                        filterName=filter["filterName"],
+                    )
+        cfnresponse.send(
+            event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
+        )
+        return
+
     if axiom_token is None:
         raise Exception("AXIOM_TOKEN is not set")
     if axiom_dataset is None:
@@ -182,14 +229,14 @@ def lambda_handler(event: dict, context=None):
 
         lambda_data = None
         json_data = None
-        if not disable_json:
-            # Try to Parse message as json
+        if message.startswith("{") and message.endswith("}"):
+            # Try to Parse message as JSON
             json_data = structured_message(message)
             if json_data is not None:
                 # Data is parsed to JSON, so use it
                 lambda_data = json_data
 
-        # Parse json is not allowed or failed.
+        # Message is not JSON or parsing failed.
         if json_data is None:
             msg = parse_message(message)
             if len(msg) != 0:

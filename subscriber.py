@@ -1,7 +1,9 @@
+import re
 import boto3
 import os
 import logging
 import cfnresponse
+from typing import Optional
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -12,167 +14,165 @@ logger.setLevel(level)
 cloudwatch_logs_client = boto3.client("logs")
 lambda_client = boto3.client("lambda")
 
-axiom_cloudwatch_lambda_ingester_arn = os.getenv("AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN")
-log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
-log_groups_return_limit = int(os.getenv("LOG_GROUPS_LIMIT", 10))
+axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
+    "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN"
+)
+log_group_names = os.getenv("LOG_GROUP_NAMES", None)
+log_group_prefix = os.getenv("LOG_GROUP_PREFIX", None)
+log_group_pattern = os.getenv("LOG_GROUP_PATTERN", None)
+log_groups_return_limit = 50
 
 
-def get_log_groups(token=None):
-    if token is None:
-        if log_group_prefix != "":
-            return cloudwatch_logs_client.describe_log_groups(
-                logGroupNamePrefix=log_group_prefix, limit=log_groups_return_limit
-            )
-        else:
-            return cloudwatch_logs_client.describe_log_groups(
-                limit=log_groups_return_limit
-            )
-    else:
-        if log_group_prefix != "":
-            return cloudwatch_logs_client.describe_log_groups(
-                logGroupNamePrefix=log_group_prefix,
-                nextToken=token,
-                limit=log_groups_return_limit,
-            )
-        else:
-            return cloudwatch_logs_client.describe_log_groups(
-                nextToken=token,
-                limit=log_groups_return_limit,
-            )
+def build_groups_list(
+    all_groups: list,
+    names: Optional[list] = None,
+    pattern: Optional[str] = None,
+    prefix: Optional[str] = None,
+):
+    # ensure filter params have correct values
+    if not names:
+        names = None
+    if not pattern:
+        pattern = None
+    if not prefix:
+        prefix = None
+    # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
+    groups = []
+    for g in all_groups:
+        group = {"name": g["logGroupName"].strip(), "arn": g["arn"]}
+        if names is None and pattern is None and prefix is None:
+            groups.append(group)
+            continue
+        elif names is not None and group["name"] in names:
+            groups.append(group)
+            continue
+        elif prefix is not None and group["name"].startswith(prefix):
+            groups.append(group)
+            continue
+        elif pattern is not None and re.match(pattern, group["name"]):
+            groups.append(group)
+
+    return groups
 
 
-def remove_permission(lambda_arn):
-    lambda_client.remove_permission(
-        FunctionName=lambda_arn,
-        StatementId="cloudwatch-backfiller-axiom",
+def get_log_groups(nextToken=None):
+    # check docs:
+    # 1. boto3 https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
+    # 2. AWS API https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DescribeLogGroups.html#API_DescribeLogGroups_RequestSyntax
+    resp = cloudwatch_logs_client.describe_log_groups(limit=log_groups_return_limit)
+    all_groups = resp["logGroups"]
+    nextToken = resp["nextToken"]
+    # continue fetching log groups until nextToken is None
+    while nextToken is not None:
+        resp = cloudwatch_logs_client.describe_log_groups(
+            limit=log_groups_return_limit, nextToken=nextToken
+        )
+        all_groups.extend(resp["logGroups"])
+        nextToken = resp["nextToken"] if "nextToken" in resp else None
+
+    return all_groups
+
+
+def create_subscription_filter(log_group_arn: str, lambda_arn: str):
+    log_group_name = log_group_arn.split(":")[-2]
+    logger.info(f"Creating subscription filter for {log_group_name}")
+
+    filter_name = "%s-axiom" % log_group_name
+
+    cloudwatch_logs_client.put_subscription_filter(
+        logGroupName=log_group_name,
+        filterName=filter_name,
+        filterPattern="",
+        destinationArn=lambda_arn,
+        distribution="ByLogStream",
     )
-
-
-def delete_subscription_filter(log_group_arn, lambda_arn):
-    try:
-        log_group_name = log_group_arn.split(":")[-2]
-
-        logger.info(f"Deleting subscription filter for {log_group_name}...")
-
-        cloudwatch_logs_client.delete_subscription_filter(
-            logGroupName=log_group_name, filterName="%s-axiom" % log_group_name
-        )
-
-        logger.info(
-            f"{log_group_name} subscription filter has been deleted successfully."
-        )
-
-    except Exception as e:
-        logger.error(f"Error deleting Subscription filter: {e}")
-        raise e
-
-
-def create_statement(region, account_id, lambda_arn):
-    logger.info(f"Creating permission for {lambda_arn}...")
-    source_arn = "arn:aws:logs:%s:%s:log-group:*:*" % (
-        region,
-        account_id,
-    )
-    lambda_client.add_permission(
-        FunctionName=lambda_arn,
-        StatementId="cloudwatch-backfiller-axiom",
-        Action="lambda:InvokeFunction",
-        Principal=f"logs.amazonaws.com",
-        SourceArn=source_arn,
-    )
-
-
-def create_subscription_filter(log_group_arn, lambda_arn):
-    try:
-        log_group_name = log_group_arn.split(":")[-2]
-        logger.info(f"Creating subscription filter for {log_group_name}...")
-
-        cloudwatch_logs_client.put_subscription_filter(
-            logGroupName=log_group_name,
-            filterName="%s-axiom" % log_group_name,
-            filterPattern="",
-            destinationArn=lambda_arn,
-            distribution="ByLogStream",
-        )
-        logger.info(
-            f"{log_group_name} subscription filter has been created successfully."
-        )
-    except Exception as e:
-        logger.error(f"Error create Subscription filter: {e}")
-        raise e
+    logger.info(f"{log_group_name} subscription filter has been created successfully.")
 
 
 def lambda_handler(event: dict, context=None):
-    if axiom_cloudwatch_lambda_ingester_arn is None:
-        raise Exception("AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN is not set")
+    # handle deletion of the stack
+    if event["RequestType"] == "Delete":
+        cfnresponse.send(
+            event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
+        )
+        return
+
+    if (
+        axiom_cloudwatch_forwarder_lambda_arn is None
+        or axiom_cloudwatch_forwarder_lambda_arn == ""
+    ):
+        raise Exception("AXIOM_CLOUDWATCH_LAMBDA_FORWARDER_ARN is not set")
 
     aws_account_id = context.invoked_function_arn.split(":")[4]
     region = os.getenv("AWS_REGION")
 
-    # create permission for lambda
-    try:
-        remove_permission(axiom_cloudwatch_lambda_ingester_arn)
-    except Exception as e:
-        logger.error(f"Error removing permission: {e}")
-
-    create_statement(region, aws_account_id, axiom_cloudwatch_lambda_ingester_arn)
-
-    ingester_lambda_group_name = (
-        "/aws/lambda/" + axiom_cloudwatch_lambda_ingester_arn.split(":")[-1]
+    log_group_names_list = (
+        log_group_names.split(",") if log_group_names is not None else []
+    )
+    log_groups = build_groups_list(
+        get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
     )
 
-    def log_groups(token=None):
-        groups_response = get_log_groups(token)
-        groups = groups_response["logGroups"]
-        token = groups_response["nextToken"] if "nextToken" in groups_response else None
+    # report number of log groups found
+    logger.info(f"Found {len(log_groups)} log groups that matches the criteria.")
 
-        if len(groups) == 0:
-            return
+    report = {
+        "log_groups_count": len(log_groups),
+        "matched_log_groups": [],
+        "added_groups": [],
+        "added_groups_count": 0,
+        "errors": {},
+    }
+    for group in log_groups:
+        # skip the Forwarder lambda log group to avoid circular logging
+        if group["name"].startswith("/aws/axiom/"):
+            continue
 
-        for group in groups:
-            # skip the ingester lambda log group to avoid circular logging
-            if group["logGroupName"] == ingester_lambda_group_name:
+        # create invoke permission for lambda
+        cleaned_name = "-".join(group["name"].split("/")[3:])
+
+        report["matched_log_groups"].append(group["name"])
+        report["errors"][group["name"]] = []
+
+        # if the log group already have a subscription filter, skip it
+        try:
+            response = cloudwatch_logs_client.describe_subscription_filters(
+                logGroupName=group["name"]
+            )
+            # TODO: improve the Subscription filters check
+            if len(response["subscriptionFilters"]) > 0:
+                report["errors"][group["name"]].append(
+                    "Subscription filter already exists"
+                )
+                logger.info(f"Subscription filter already exists for {cleaned_name}")
                 continue
-
-            try:
-                delete_subscription_filter(
-                    region, aws_account_id, axiom_cloudwatch_lambda_ingester_arn
-                )
-            except Exception:
-                pass
-
-            try:
-                create_subscription_filter(
-                    group["arn"], axiom_cloudwatch_lambda_ingester_arn
-                )
-            except cloudwatch_logs_client.exceptions.LimitExceededException as error:
-                logger.error(
-                    "failed to create subscription filter for: %s"
-                    % group["logGroupName"]
-                )
-                logger.error(error)
-                continue
-
-        if token is None:
-            return
+        except Exception as e:
+            logger.error(f"Error checking subscription filter for {cleaned_name}: {e}")
+            continue
 
         try:
-            log_groups(token)
-        except Exception as e:
-            raise e
+            create_subscription_filter(
+                group["arn"], axiom_cloudwatch_forwarder_lambda_arn
+            )
+            report["added_groups_count"] += 1
+            report["added_groups"].append(group["name"])
+        except cloudwatch_logs_client.exceptions.LimitExceededException as error:
+            report["errors"][group["name"]].append(str(error))
+            logger.error(
+                "failed to create subscription filter for: %s. Cannot create more log groups. Create another Forwarder with different log groups configuration."
+                % group["name"]
+            )
+            logger.error(error)
+            break
+        except Exception as error:
+            report["errors"][group["name"]].append(str(error))
+            logger.error("failed to create subscription filter for: %s" % group["name"])
+            logger.error(error)
+            continue
 
-    responseData = {}
-    try:
-        log_groups()
-    except Exception as e:
-        responseData["success"] = "False"
-        if "ResponseURL" in event:
-            cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-        else:
-            raise e
-
-    responseData["success"] = "True"
-    if "ResponseURL" in event:
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
-    else:
-        return "ok"
+    logger.info(
+        f"created subscription for {report['added_groups_count']} log groups out of {len(report['matched_log_groups'])} groups"
+    )
+    logger.info(report)
+    responseData = {"success": True}
+    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)

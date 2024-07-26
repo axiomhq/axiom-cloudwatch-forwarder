@@ -1,10 +1,12 @@
-# subscribe the Axiom ingester to newly created log groups
+# Automatically subscribes the Axiom CloudWatch Forwarder to newly created log groups
 import boto3
 import os
 import logging
 
 # Set environment variables.
-axiom_cloudwatch_lambda_ingester_arn = os.getenv("AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN")
+axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
+    "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN"
+)
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", "")
 
 # set logger
@@ -20,7 +22,7 @@ lambda_client = boto3.client("lambda")
 
 def lambda_handler(event, context):
     """
-    Subscribes log ingester to log group from event.
+    Subscribes Axiom CloudWatch Forwarder to log group from event.
 
     :param event: Event data from CloudWatch Logs.
     :type event: dict
@@ -44,7 +46,7 @@ def lambda_handler(event, context):
     # or whether the log group's name starts with the set prefix.
     if not log_group_prefix or log_group_name.startswith(log_group_prefix):
         create_subscription_filter(
-            log_group_name, log_group_arn, axiom_cloudwatch_lambda_ingester_arn
+            log_group_name, log_group_arn, axiom_cloudwatch_forwarder_lambda_arn
         )
 
     else:
@@ -56,13 +58,6 @@ def lambda_handler(event, context):
 def create_subscription_filter(log_group_name, log_group_arn, lambda_arn):
     try:
         logger.info(f"Creating subscription filter for {log_group_name}...")
-        lambda_client.add_permission(
-            FunctionName=lambda_arn,
-            StatementId="%s-axiom" % log_group_name.replace("/", "-"),
-            Action="lambda:InvokeFunction",
-            Principal=f"logs.amazonaws.com",
-            SourceArn=log_group_arn,
-        )
 
         log_client.put_subscription_filter(
             logGroupName=log_group_name,
