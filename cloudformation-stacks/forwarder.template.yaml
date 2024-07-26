@@ -81,7 +81,7 @@ Resources:
   ForwarderLambdaPermission:
     Type: AWS::Lambda::Permission
     DependsOn:
-      - LogsLambda
+      - ForwarderLambda
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !Ref "ForwarderLambda"
