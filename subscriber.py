@@ -134,22 +134,6 @@ def lambda_handler(event: dict, context=None):
         report["matched_log_groups"].append(group["name"])
         report["errors"][group["name"]] = []
 
-        # if the log group already have a subscription filter, skip it
-        try:
-            response = cloudwatch_logs_client.describe_subscription_filters(
-                logGroupName=group["name"]
-            )
-            # TODO: improve the Subscription filters check
-            if len(response["subscriptionFilters"]) > 0:
-                report["errors"][group["name"]].append(
-                    "Subscription filter already exists"
-                )
-                logger.info(f"Subscription filter already exists for {cleaned_name}")
-                continue
-        except Exception as e:
-            logger.error(f"Error checking subscription filter for {cleaned_name}: {e}")
-            continue
-
         try:
             create_subscription_filter(
                 group["arn"], axiom_cloudwatch_forwarder_lambda_arn
