@@ -16,15 +16,15 @@ logger.setLevel(level)
 cloudwatch_logs_client = boto3.client("logs")
 
 # Standard out from Lambdas.
-std_matcher = re.compile("\d\d\d\d-\d\d-\d\d\S+\s+(?P<requestID>\S+)")
+std_matcher = re.compile(r"\d\d\d\d-\d\d-\d\d\S+\s+(?P<requestID>\S+)")
 
 # END RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
-end_matcher = re.compile("END RequestId:\s+(?P<requestID>\S+)")
+end_matcher = re.compile(r"END RequestId:\s+(?P<requestID>\S+)")
 
 # START RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
 # Version: $LATEST
 start_matcher = re.compile(
-    "START RequestId:\s+(?P<requestID>\S+)\s+" "Version: (?P<version>\S+)"
+    r"START RequestId:\s+(?P<requestID>\S+)\s+" "Version: (?P<version>\S+)"
 )
 
 # REPORT RequestId: b3be449c-8bd7-11e7-bb30-4f271af95c46
