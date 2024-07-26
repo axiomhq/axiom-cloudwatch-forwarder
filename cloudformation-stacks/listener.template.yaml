@@ -1,42 +1,37 @@
-Description: A lambda function to auto subscribe Axiom Forwarder to new CloudWatch Log Groups.
+Description: A Lambda function to auto subscribe Axiom CloudWatch Forwarder to new log groups.
 Parameters:
-  LambdaFunctionName:
+  AxiomCloudWatchForwarderLambdaARN:
     Type: String
-    Description: Name of the AWS Lambda Function.
-    Default: cloudwatch-subscriber-axiom
-    AllowedPattern: ".+" # required
-  AxiomCloudWatchLambdaIngesterARN:
-    Type: String
-    Description: The ARN of the AWS Lambda Function that is used to ingest data to axiom.
+    Description: The ARN of the AWS Lambda function that is used to forward logs to Axiom.
     AllowedPattern: ".+" # required
   CloudWatchLogGroupsPrefix:
     Type: String
-    Description: The Prefix of cloudwatch log groups to subscribe to the AWS Lambda ingester.
+    Description: The prefix of the CloudWatch log groups that will trigger the Axiom CloudWatch Forwarder Lambda.
     Default: "" # all
   AxiomLambdaLogRetention:
     Type: "Number"
-    Description: "The number of days to retain CloudWatch logs for the created lambda functions."
+    Description: "The number of days to retain CloudWatch logs for the created Lambda functions."
     Default: 1
   EnableCloudTrail:
-    Description: "Enable Cloudtrail for cloudwatch CreateLogGroup event notification? If already enabled, choose 'false'"
+    Description: "Enable Cloudtrail for CloudWatch CreateLogGroup event notification? If already enabled, choose 'false'"
     Default: true
     Type: String
     AllowedValues: [true, false]
 Conditions:
   ShouldEnableCloudTrail: !Equals [true, !Ref EnableCloudTrail]
 Resources:
-  AxiomCloudWatchLogsSubscriberS3Bucket:
+  ListenerS3Bucket:
     Condition: ShouldEnableCloudTrail
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: BucketOwnerFullControl
       BucketName: !Join ["-", [!Ref AWS::StackName, "cloudtrail"]]
-  AxiomCloudWatchLogsSubscriberS3BucketPolicy:
+  ListenerS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     Condition: ShouldEnableCloudTrail
-    DependsOn: AxiomCloudWatchLogsSubscriberS3Bucket
+    DependsOn: ListenerS3Bucket
     Properties:
-      Bucket: !Ref AxiomCloudWatchLogsSubscriberS3Bucket
+      Bucket: !Ref ListenerS3Bucket
       PolicyDocument:
         {
           "Version": "2012-10-17",
@@ -47,8 +42,7 @@ Resources:
                 "Effect": "Allow",
                 "Principal": { "Service": "cloudtrail.amazonaws.com" },
                 "Action": "s3:GetBucketAcl",
-                "Resource":
-                  !GetAtt ["AxiomCloudWatchLogsSubscriberS3Bucket", "Arn"],
+                "Resource": !GetAtt ["ListenerS3Bucket", "Arn"],
               },
               {
                 "Sid": "AWSCloudTrailWrite20150319",
@@ -59,7 +53,7 @@ Resources:
                   !Join [
                     "",
                     [
-                      !GetAtt ["AxiomCloudWatchLogsSubscriberS3Bucket", "Arn"],
+                      !GetAtt ["ListenerS3Bucket", "Arn"],
                       "/AWSLogs/",
                       { "Ref": "AWS::AccountId" },
                       "/*",
@@ -73,22 +67,20 @@ Resources:
               },
             ],
         }
-  AxiomLogsSubscriberCloudTrail:
+  ListenerCloudTrail:
     Type: AWS::CloudTrail::Trail
     Condition: ShouldEnableCloudTrail
-    DependsOn: AxiomCloudWatchLogsSubscriberS3BucketPolicy
+    DependsOn: ListenerS3BucketPolicy
     Properties:
       EnableLogFileValidation: false
-      IncludeGlobalServiceEvents: true
-      IsMultiRegionTrail: true
       IsLogging: true
-      S3BucketName: !Ref AxiomCloudWatchLogsSubscriberS3Bucket
+      S3BucketName: !Ref ListenerS3Bucket
       TrailName: !Join ["-", [!Ref AWS::StackName, { "Ref": "AWS::AccountId" }]]
-  AxiomLogsSubscriberEventRule:
-    DependsOn: AxiomCloudWatchLogsSubscriber
+  ListenerEventRule:
+    DependsOn: ListenerLambda
     Type: AWS::Events::Rule
     Properties:
-      Description: Axiom log group auto subscription event rule.,
+      Description: Axiom log group auto subscription event rule.
       EventPattern:
         source: ["aws.logs"]
         detail-type: ["AWS API Call via CloudTrail"]
@@ -100,8 +92,8 @@ Resources:
           ["-", [{ "Ref": "AWS::StackName" }, "auto-subscription-rule"]]
       Targets:
         - Id: !Join ["-", [!Ref "AWS::StackName", "auto-subscription-rule"]]
-          Arn: !GetAtt ["AxiomCloudWatchLogsSubscriber", "Arn"]
-  AxiomCloudWatchLogsSubscriberPolicy:
+          Arn: !GetAtt ["ListenerLambda", "Arn"]
+  ListenerPolicy:
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
@@ -120,10 +112,10 @@ Resources:
               - logs:GetLogEvents
             Effect: Allow
             Resource: "*"
-      PolicyName: cloudwatch-subscriber-axiom-policy
+      PolicyName: axiom-cloudwatch-listener-policy
       Roles:
-        - !Ref "AxiomCloudWatchLogsSubscriberRole"
-  AxiomCloudWatchLogsSubscriberRole:
+        - !Ref "ListenerLambda"
+  ListenerRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -137,12 +129,12 @@ Resources:
                 - logs.amazonaws.com
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  AxiomCloudWatchLogsSubscriber:
+  ListenerLambda:
     Type: AWS::Lambda::Function
     DependsOn:
-      - AxiomCloudWatchLogsSubscriberRole
+      - ListenerRole
     Properties:
-      FunctionName: !Ref LambdaFunctionName
+      FunctionName: !Sub "${AWS::StackName}"
       Runtime: python3.9
       Handler: index.lambda_handler
       Code:
@@ -150,27 +142,27 @@ Resources:
           # DO NOT EDIT
           # CI will replace these comments with the code from ./logs_subscriber.py
       Role: !GetAtt
-        - AxiomCloudWatchLogsSubscriberRole
+        - ListenerRole
         - Arn
-      Description: Axiom CloudWatch Automatic Logs Subscriber Lambda
+      Description: Axiom CloudWatch Automatic log groups listener lambda
       Environment:
         Variables:
-          AXIOM_CLOUDWATCH_LAMBDA_INGESTER_ARN: !Ref "AxiomCloudWatchLambdaIngesterARN"
+          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"
           LOG_GROUP_PREFIX: !Ref "CloudWatchLogGroupsPrefix"
-  AxiomCloudWatchLogsSubscriberPermission:
+  ListenerPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: "lambda:InvokeFunction"
-      FunctionName: { "Fn::GetAtt": ["AxiomCloudWatchLogsSubscriber", "Arn"] }
+      FunctionName: { "Fn::GetAtt": ["ListenerLambda", "Arn"] }
       Principal: "events.amazonaws.com"
       SourceAccount:
         Ref: AWS::AccountId
-      SourceArn: !GetAtt ["AxiomLogsSubscriberEventRule", "Arn"]
-  AxiomCloudWatchLogsSubscriberLogGroup:
-    DependsOn: ["AxiomCloudWatchLogsSubscriberRole"]
+      SourceArn: !GetAtt ["ListenerEventRule", "Arn"]
+  ListenerLogGroup:
+    DependsOn: ["ListenerRole"]
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
     Properties:
-      LogGroupName:
-        !Join ["", ["/aws/lambda/", { "Ref": "AxiomCloudWatchLogsSubscriber" }]]
+      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}"
       RetentionInDays:
         Ref: "AxiomLambdaLogRetention"

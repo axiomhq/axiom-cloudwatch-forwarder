@@ -1,0 +1,94 @@
+Description: Axiom CloudWatch Forwarder Lambda
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  AxiomToken:
+    Description: The API token with ingest permission to dataset. Must start with xaat- or xait-.
+    Type: String
+    NoEcho: true
+    AllowedPattern: "^(xaat-|xait-).*"
+  AxiomURL:
+    Type: String
+    Default: "https://api.axiom.co"
+    AllowedPattern: ".+" # required
+    Description: The URL of the Axiom endpoint (without a trailing /). Defaults to "https://api.axiom.co".
+  AxiomDataset:
+    Type: String
+    Description: The name of the Axiom dataset to which events will be forwarded.
+    AllowedPattern: ".+" # required
+  DataTags:
+    Type: String
+    Description: Tags to be included with the data ingested into Axiom, e.g., <Key1>=<value1>,<Key2>=<value2>.
+Resources:
+  ForwarderLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    DeletionPolicy: Delete
+    Properties:
+      LogGroupName: !Sub "/aws/axiom/${AWS::StackName}"
+      RetentionInDays: 1
+      Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Platform"
+          Value: "Axiom"
+  ForwarderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Role"
+          Value: "AxiomCloudWatchForwarder"
+        - Key: "Platform"
+          Value: "Axiom"
+  ForwarderLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref AWS::StackName
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: |
+          # DO NOT EDIT
+          # CI will replace these comments with the code from ./forwarder.py
+      Role: !GetAtt
+        - ForwarderRole
+        - Arn
+      LoggingConfig:
+        LogGroup: !Ref ForwarderLogGroup
+      Tags:
+        - Key: "PartOf"
+          Value: !Ref AWS::StackName
+        - Key: "Role"
+          Value: "AxiomCloudWatchForwarder"
+        - Key: "Platform"
+          Value: "Axiom"
+      Environment:
+        Variables:
+          AXIOM_TOKEN: !Ref "AxiomToken"
+          AXIOM_DATASET: !Ref "AxiomDataset"
+          AXIOM_URL: !Ref "AxiomURL"
+          DATA_TAGS: !Ref DataTags
+  ForwarderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - ForwarderLambda
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref "ForwarderLambda"
+      Principal: !Sub "logs.${AWS::Region}.amazonaws.com"
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*"
+Outputs:
+  ForwarderLambdaARN:
+    Description: The ARN of the created Forwarder Lambda
+    Value: !GetAtt ForwarderLambda.Arn
