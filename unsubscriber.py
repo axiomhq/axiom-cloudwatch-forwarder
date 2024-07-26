@@ -80,13 +80,6 @@ def delete_subscription_filter(log_group_name: str):
     logger.info(f"{log_group_name} subscription filter has been deleted successfully.")
 
 
-def remove_permission(statement_id: str, lambda_arn: str):
-    lambda_client.remove_permission(
-        FunctionName=lambda_arn,
-        StatementId=statement_id,
-    )
-
-
 def lambda_handler(event: dict, context=None):
     if (
         axiom_cloudwatch_forwarder_lambda_arn is None
@@ -135,16 +128,7 @@ def lambda_handler(event: dict, context=None):
                 f"failed to delete subscription filter for {group['name']}, {str(e)}"
             )
 
-        # remove the permission from the lambda
-        cleaned_name = "-".join(group["name"].split("/")[3:])
-        statement_id = f"invoke-permission-for-{cleaned_name}"
-        try:
-            remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
-            report["added_groups_count"] += 1
-        except Exception as e:
-            report["errors"][group["name"]].append(str(e))
-            logger.error(f"failed to remove permission for {cleaned_name}: {str(e)}")
-            continue
+        report["added_groups_count"] += 1
 
         logger.info(
             f"unsubsribed from {report['added_groups_count']} log groups out of {len(report['matched_log_groups'])} groups"

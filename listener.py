@@ -58,13 +58,6 @@ def lambda_handler(event, context):
 def create_subscription_filter(log_group_name, log_group_arn, lambda_arn):
     try:
         logger.info(f"Creating subscription filter for {log_group_name}...")
-        lambda_client.add_permission(
-            FunctionName=lambda_arn,
-            StatementId="%s-axiom" % log_group_name.replace("/", "-"),
-            Action="lambda:InvokeFunction",
-            Principal=f"logs.amazonaws.com",
-            SourceArn=log_group_arn,
-        )
 
         log_client.put_subscription_filter(
             logGroupName=log_group_name,

@@ -73,35 +73,6 @@ def get_log_groups(nextToken=None):
     return all_groups
 
 
-def delete_subscription_filter(log_group_name: str):
-    logger.info(f"Deleting subscription filter for {log_group_name}...")
-
-    cloudwatch_logs_client.delete_subscription_filter(
-        logGroupName=log_group_name, filterName="%s-axiom" % log_group_name
-    )
-
-    logger.info(f"{log_group_name} subscription filter has been deleted successfully.")
-
-
-def add_permission(statement_id: str, log_group_arn: str, lambda_arn: str):
-    logger.info(f"Creating permission for {log_group_arn}...")
-
-    lambda_client.add_permission(
-        FunctionName=lambda_arn,
-        StatementId=statement_id,
-        Action="lambda:InvokeFunction",
-        Principal=f"logs.amazonaws.com",
-        SourceArn=log_group_arn,
-    )
-
-
-def remove_permission(statement_id: str, lambda_arn: str):
-    lambda_client.remove_permission(
-        FunctionName=lambda_arn,
-        StatementId=statement_id,
-    )
-
-
 def create_subscription_filter(log_group_arn: str, lambda_arn: str):
     log_group_name = log_group_arn.split(":")[-2]
     logger.info(f"Creating subscription filter for {log_group_name}")
@@ -159,7 +130,6 @@ def lambda_handler(event: dict, context=None):
 
         # create invoke permission for lambda
         cleaned_name = "-".join(group["name"].split("/")[3:])
-        statement_id = f"invoke-permission-for-{cleaned_name}"
 
         report["matched_log_groups"].append(group["name"])
         report["errors"][group["name"]] = []
@@ -178,28 +148,6 @@ def lambda_handler(event: dict, context=None):
                 continue
         except Exception as e:
             logger.error(f"Error checking subscription filter for {cleaned_name}: {e}")
-            continue
-
-        # remove subscription filter if exists
-        try:
-            delete_subscription_filter(group["name"])
-        except Exception as e:
-            logger.warning(
-                f"failed to delete subscription filter for {group['name']}, {str(e)}"
-            )
-        # remove permission if exists
-        try:
-            remove_permission(statement_id, axiom_cloudwatch_forwarder_lambda_arn)
-        except Exception as e:
-            logger.warning(f"failed to remove permission for {cleaned_name}: {str(e)}")
-
-        try:
-            add_permission(
-                statement_id, group["arn"], axiom_cloudwatch_forwarder_lambda_arn
-            )
-        except Exception as e:
-            report["errors"][group["name"]].append(str(e))
-            logger.error(f"Error removing/adding permission for {cleaned_name}: {e}")
             continue
 
         try:

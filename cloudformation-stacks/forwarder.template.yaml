@@ -78,6 +78,16 @@ Resources:
           AXIOM_DATASET: !Ref "AxiomDataset"
           AXIOM_URL: !Ref "AxiomURL"
           DATA_TAGS: !Ref DataTags
+  ForwarderLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - LogsLambda
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref "ForwarderLambda"
+      Principal: !Sub "logs.${AWS::Region}.amazonaws.com"
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:*"
 Outputs:
   ForwarderLambdaARN:
     Description: The ARN of the created Forwarder Lambda
