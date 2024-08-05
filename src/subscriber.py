@@ -2,8 +2,8 @@ import re
 import boto3
 import os
 import logging
-import cfnresponse
 from typing import Optional
+from common import send_response, fetch_log_groups, build_groups_list
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -20,58 +20,6 @@ axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
 log_group_names = os.getenv("LOG_GROUP_NAMES", None)
 log_group_prefix = os.getenv("LOG_GROUP_PREFIX", None)
 log_group_pattern = os.getenv("LOG_GROUP_PATTERN", None)
-log_groups_return_limit = 50
-
-
-def build_groups_list(
-    all_groups: list,
-    names: Optional[list] = None,
-    pattern: Optional[str] = None,
-    prefix: Optional[str] = None,
-):
-    # ensure filter params have correct values
-    if not names:
-        names = None
-    if not pattern:
-        pattern = None
-    if not prefix:
-        prefix = None
-    # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
-    groups = []
-    for g in all_groups:
-        group = {"name": g["logGroupName"].strip(), "arn": g["arn"]}
-        if names is None and pattern is None and prefix is None:
-            groups.append(group)
-            continue
-        elif names is not None and group["name"] in names:
-            groups.append(group)
-            continue
-        elif prefix is not None and group["name"].startswith(prefix):
-            groups.append(group)
-            continue
-        elif pattern is not None and re.match(pattern, group["name"]):
-            groups.append(group)
-
-    return groups
-
-
-def get_log_groups(nextToken=None):
-    # check docs:
-    # 1. boto3 https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
-    # 2. AWS API https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DescribeLogGroups.html#API_DescribeLogGroups_RequestSyntax
-    resp = cloudwatch_logs_client.describe_log_groups(limit=log_groups_return_limit)
-    all_groups = resp["logGroups"]
-    nextToken = resp["nextToken"]
-    # continue fetching log groups until nextToken is None
-    while nextToken is not None:
-        resp = cloudwatch_logs_client.describe_log_groups(
-            limit=log_groups_return_limit, nextToken=nextToken
-        )
-        all_groups.extend(resp["logGroups"])
-        nextToken = resp["nextToken"] if "nextToken" in resp else None
-
-    return all_groups
-
 
 def create_subscription_filter(log_group_arn: str, lambda_arn: str):
     log_group_name = log_group_arn.split(":")[-2]
@@ -92,9 +40,7 @@ def create_subscription_filter(log_group_arn: str, lambda_arn: str):
 def lambda_handler(event: dict, context=None):
     # handle deletion of the stack
     if event["RequestType"] == "Delete":
-        cfnresponse.send(
-            event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
-        )
+        send_response(event, context, "SUCCESS", {})
         return
 
     if (
@@ -110,7 +56,7 @@ def lambda_handler(event: dict, context=None):
         log_group_names.split(",") if log_group_names is not None else []
     )
     log_groups = build_groups_list(
-        get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
+        fetch_log_groups(cloudwatch_logs_client), log_group_names_list, log_group_pattern, log_group_prefix
     )
 
     # report number of log groups found
@@ -159,4 +105,4 @@ def lambda_handler(event: dict, context=None):
     )
     logger.info(report)
     responseData = {"success": True}
-    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+    send_response(event, context, "SUCCESS", responseData)

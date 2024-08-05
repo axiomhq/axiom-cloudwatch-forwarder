@@ -6,7 +6,7 @@ import json
 import boto3
 import logging
 import urllib.request
-import cfnresponse
+from common import send_response
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -185,8 +185,8 @@ def lambda_handler(event: dict, context=None):
                         logGroupName=group["logGroupName"],
                         filterName=filter["filterName"],
                     )
-        cfnresponse.send(
-            event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
+        send_response(
+            event, context, "SUCCESS", {}, event["PhysicalResourceId"]
         )
         return
 
