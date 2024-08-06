@@ -41,15 +41,17 @@ Resources:
       PolicyDocument:
         Statement:
           - Action:
+              - logs:DescribeSubscriptionFilters
               - logs:DeleteSubscriptionFilter
               - logs:PutSubscriptionFilter
               - logs:DescribeLogGroups
-              - logs:DescribeSubscriptionFilters
+              - logs:CreateLogStream
+              - logs:PutLogEvents
               - lambda:AddPermission
               - lambda:RemovePermission
             Effect: Allow
             Resource: "*"
-      PolicyName: axiom-cloudwatch-subscriber-lambda-policy
+      PolicyName: !Sub "${AWS::StackName}-subscriber-lambda-policy"
       Roles:
         - !Ref "SubscriberRole"
   SubscriberLogGroup:
@@ -76,8 +78,6 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   SubscriberLambda:
     Type: AWS::Lambda::Function
     Properties:
