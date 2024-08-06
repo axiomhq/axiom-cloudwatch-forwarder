@@ -41,8 +41,6 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
       Tags:
         - Key: "PartOf"
           Value: !Ref AWS::StackName
@@ -50,6 +48,21 @@ Resources:
           Value: "AxiomCloudWatchForwarder"
         - Key: "Platform"
           Value: "Axiom"
+  ForwarderPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - lambda:AddPermission
+              - lambda:RemovePermission
+            Effect: Allow
+            Resource: "*"
+      PolicyName: !Sub "${AWS::StackName}-forwarder-lambda-policy"
+      Roles:
+        - !Ref "ForwarderRole"
   ForwarderLambda:
     Type: AWS::Lambda::Function
     Properties:
