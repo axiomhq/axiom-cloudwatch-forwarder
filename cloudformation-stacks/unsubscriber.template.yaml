@@ -3,10 +3,6 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: "Forwarder lambda"
-        Parameters:
-          - AxiomCloudWatchForwarderLambdaARN
-      - Label:
           default: "Log groups to unsubscribe from"
         Parameters:
           - CloudWatchLogGroupsNames
@@ -14,10 +10,6 @@ Metadata:
           - CloudWatchLogGroupsPattern
 
 Parameters:
-  AxiomCloudWatchForwarderLambdaARN:
-    Type: String
-    Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to forward logs to Axiom.
-    AllowedPattern: ".+" # required
   CloudWatchLogGroupNames:
     Type: String
     Description: A comma-separated list of CloudWatch log groups to unsubscribe from.
@@ -101,9 +93,6 @@ Resources:
           Value: "AxiomCloudWatchUnsubscriber"
         - Key: "Platform"
           Value: "Axiom"
-      Environment:
-        Variables:
-          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"
   UnsubscriberInvoker:
     Type: AWS::CloudFormation::CustomResource
     DependsOn: UnsubscriberLambda
