@@ -17,9 +17,7 @@ lambda_client = boto3.client("lambda")
 axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
     "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN"
 )
-log_group_names = os.getenv("LOG_GROUP_NAMES", None)
-log_group_prefix = os.getenv("LOG_GROUP_PREFIX", None)
-log_group_pattern = os.getenv("LOG_GROUP_PATTERN", None)
+
 log_groups_return_limit = 50
 
 
@@ -96,6 +94,10 @@ def lambda_handler(event: dict, context=None):
             event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
         )
         return
+
+    log_group_names = event["ResourceProperties"]["CloudWatchLogGroupNames"]
+    log_group_prefix = event["ResourceProperties"]["CloudWatchLogGroupPrefix"]
+    log_group_pattern = event["ResourceProperties"]["CloudWatchLogGroupPattern"]
 
     if (
         axiom_cloudwatch_forwarder_lambda_arn is None

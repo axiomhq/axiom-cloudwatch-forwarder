@@ -18,18 +18,22 @@ Parameters:
     Type: String
     Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to forward logs to Axiom.
     AllowedPattern: ".+" # required
-  CloudWatchLogGroupsNames:
+  CloudWatchLogGroupNames:
     Type: String
     Description: A comma-separated list of CloudWatch log groups to unsubscribe from.
     Default: "" # all
-  CloudWatchLogGroupsPrefix:
+  CloudWatchLogGroupPrefix:
     Type: String
     Description: The prefix of CloudWatch log groups to unsubscribe from.
     Default: "" # all
-  CloudWatchLogGroupsPattern:
+  CloudWatchLogGroupPattern:
     Type: String
     Description: A regular expression pattern for CloudWatch log groups to unsubscribe from.
     Default: "" # all
+  ForceUpdate:
+    Type: String
+    Description: Enter a random string to force an update of the stack.
+    Default: ""
 Resources:
   UnsubscriberPolicy:
     Type: AWS::IAM::Policy
@@ -109,3 +113,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt UnsubscriberLambda.Arn
       StackName: !Ref AWS::StackName
+      Force: !Ref "ForceUpdate"
+      CloudWatchLogGroupNames: !Ref "CloudWatchLogGroupNames"
+      CloudWatchLogGroupPrefix: !Ref "CloudWatchLogGroupPrefix"
+      CloudWatchLogGroupPattern: !Ref "CloudWatchLogGroupPattern"
