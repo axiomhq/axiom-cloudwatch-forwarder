@@ -110,6 +110,8 @@ Resources:
               - logs:DescribeSubscriptionFilters
               - logs:FilterLogEvents
               - logs:GetLogEvents
+              - logs:CreateLogStream
+              - logs:PutLogEvents
             Effect: Allow
             Resource: "*"
       PolicyName: axiom-cloudwatch-listener-policy
@@ -127,8 +129,6 @@ Resources:
               Service:
                 - lambda.amazonaws.com
                 - logs.amazonaws.com
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   ListenerLambda:
     Type: AWS::Lambda::Function
     DependsOn:
@@ -140,7 +140,7 @@ Resources:
       Code:
         ZipFile: |
           # DO NOT EDIT
-          # CI will replace these comments with the code from ./logs_subscriber.py
+          # CI will replace these comments with the code from ./listener.py
       Role: !GetAtt
         - ListenerRole
         - Arn
