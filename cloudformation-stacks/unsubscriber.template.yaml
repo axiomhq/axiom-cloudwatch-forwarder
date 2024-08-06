@@ -103,9 +103,6 @@ Resources:
       Environment:
         Variables:
           AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"
-          LOG_GROUP_NAMES: !Ref "CloudWatchLogGroupsNames"
-          LOG_GROUP_PREFIX: !Ref "CloudWatchLogGroupsPrefix"
-          LOG_GROUP_PATTERN: !Ref "CloudWatchLogGroupsPattern"
   UnsubscriberInvoker:
     Type: AWS::CloudFormation::CustomResource
     DependsOn: UnsubscriberLambda
