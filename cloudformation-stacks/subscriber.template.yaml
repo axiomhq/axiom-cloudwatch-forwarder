@@ -18,18 +18,22 @@ Parameters:
     Type: String
     Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to ship logs to Axiom.
     AllowedPattern: ".+" # required
-  CloudWatchLogGroupsNames:
+  CloudWatchLogGroupNames:
     Type: String
     Description: A comma separated list of CloudWatch log groups to subscribe to.
     Default: "" # all
-  CloudWatchLogGroupsPrefix:
+  CloudWatchLogGroupPrefix:
     Type: String
     Description: The Prefix of CloudWatch log groups to subscribe to.
     Default: "" # all
-  CloudWatchLogGroupsPattern:
+  CloudWatchLogGroupPattern:
     Type: String
     Description: A regular expression pattern of CloudWatch log groups to subscribe to.
     Default: "" # all
+  ForceUpdate:
+    Type: String
+    Description: Enter a random string to force an update of the stack.
+    Default: ""
 Resources:
   SubscriberPolicy:
     Type: AWS::IAM::Policy
@@ -37,15 +41,17 @@ Resources:
       PolicyDocument:
         Statement:
           - Action:
+              - logs:DescribeSubscriptionFilters
               - logs:DeleteSubscriptionFilter
               - logs:PutSubscriptionFilter
               - logs:DescribeLogGroups
-              - logs:DescribeSubscriptionFilters
+              - logs:CreateLogStream
+              - logs:PutLogEvents
               - lambda:AddPermission
               - lambda:RemovePermission
             Effect: Allow
             Resource: "*"
-      PolicyName: axiom-cloudwatch-subscriber-lambda-policy
+      PolicyName: !Sub "${AWS::StackName}-subscriber-lambda-policy"
       Roles:
         - !Ref "SubscriberRole"
   SubscriberLogGroup:
@@ -72,8 +78,6 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   SubscriberLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -102,9 +106,6 @@ Resources:
       Environment:
         Variables:
           AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"
-          LOG_GROUP_NAMES: !Ref "CloudWatchLogGroupsNames"
-          LOG_GROUP_PREFIX: !Ref "CloudWatchLogGroupsPrefix"
-          LOG_GROUP_PATTERN: !Ref "CloudWatchLogGroupsPattern"
   SubscriberInvoker:
     Type: AWS::CloudFormation::CustomResource
     DependsOn: SubscriberLambda
@@ -112,3 +113,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SubscriberLambda.Arn
       StackName: !Ref AWS::StackName
+      Force: !Ref "ForceUpdate"
+      CloudWatchLogGroupNames: !Ref "CloudWatchLogGroupNames"
+      CloudWatchLogGroupPrefix: !Ref "CloudWatchLogGroupPrefix"
+      CloudWatchLogGroupPattern: !Ref "CloudWatchLogGroupPattern"

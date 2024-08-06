@@ -78,6 +78,7 @@ def push_events_to_axiom(events: list):
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {axiom_token}",
+            "User-Agent": "axiom-cloudwatch-forwarder/v1.1.0",
         },
     )
 

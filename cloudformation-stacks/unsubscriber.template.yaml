@@ -3,10 +3,6 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: "Forwarder lambda"
-        Parameters:
-          - AxiomCloudWatchForwarderLambdaARN
-      - Label:
           default: "Log groups to unsubscribe from"
         Parameters:
           - CloudWatchLogGroupsNames
@@ -14,22 +10,22 @@ Metadata:
           - CloudWatchLogGroupsPattern
 
 Parameters:
-  AxiomCloudWatchForwarderLambdaARN:
-    Type: String
-    Description: The ARN of the Axiom CloudWatch Forwarder Lambda function used to forward logs to Axiom.
-    AllowedPattern: ".+" # required
-  CloudWatchLogGroupsNames:
+  CloudWatchLogGroupNames:
     Type: String
     Description: A comma-separated list of CloudWatch log groups to unsubscribe from.
     Default: "" # all
-  CloudWatchLogGroupsPrefix:
+  CloudWatchLogGroupPrefix:
     Type: String
     Description: The prefix of CloudWatch log groups to unsubscribe from.
     Default: "" # all
-  CloudWatchLogGroupsPattern:
+  CloudWatchLogGroupPattern:
     Type: String
     Description: A regular expression pattern for CloudWatch log groups to unsubscribe from.
     Default: "" # all
+  ForceUpdate:
+    Type: String
+    Description: Enter a random string to force an update of the stack.
+    Default: ""
 Resources:
   UnsubscriberPolicy:
     Type: AWS::IAM::Policy
@@ -37,14 +33,17 @@ Resources:
       PolicyDocument:
         Statement:
           - Action:
+              - logs:DescribeSubscriptionFilters
               - logs:DeleteSubscriptionFilter
               - logs:PutSubscriptionFilter
               - logs:DescribeLogGroups
+              - logs:CreateLogStream
+              - logs:PutLogEvents
               - lambda:AddPermission
               - lambda:RemovePermission
             Effect: Allow
             Resource: "*"
-      PolicyName: axiom-cloudwatch-unsubscriber-lambda-policy
+      PolicyName: !Sub "${AWS::StackName}-unsubscriber-lambda-policy"
       Roles:
         - !Ref "UnsubscriberRole"
   UnsubscriberLogGroup:
@@ -71,8 +70,6 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   UnsubscriberLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -96,12 +93,6 @@ Resources:
           Value: "AxiomCloudWatchUnsubscriber"
         - Key: "Platform"
           Value: "Axiom"
-      Environment:
-        Variables:
-          AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN: !Ref "AxiomCloudWatchForwarderLambdaARN"
-          LOG_GROUP_NAMES: !Ref "CloudWatchLogGroupsNames"
-          LOG_GROUP_PREFIX: !Ref "CloudWatchLogGroupsPrefix"
-          LOG_GROUP_PATTERN: !Ref "CloudWatchLogGroupsPattern"
   UnsubscriberInvoker:
     Type: AWS::CloudFormation::CustomResource
     DependsOn: UnsubscriberLambda
@@ -109,3 +100,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt UnsubscriberLambda.Arn
       StackName: !Ref AWS::StackName
+      Force: !Ref "ForceUpdate"
+      CloudWatchLogGroupNames: !Ref "CloudWatchLogGroupNames"
+      CloudWatchLogGroupPrefix: !Ref "CloudWatchLogGroupPrefix"
+      CloudWatchLogGroupPattern: !Ref "CloudWatchLogGroupPattern"

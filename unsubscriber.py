@@ -14,12 +14,6 @@ logger.setLevel(level)
 cloudwatch_logs_client = boto3.client("logs")
 lambda_client = boto3.client("lambda")
 
-axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
-    "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN"
-)
-log_group_names = os.getenv("LOG_GROUP_NAMES", None)
-log_group_prefix = os.getenv("LOG_GROUP_PREFIX", None)
-log_group_pattern = os.getenv("LOG_GROUP_PATTERN", None)
 log_groups_return_limit = 50
 
 
@@ -81,20 +75,9 @@ def delete_subscription_filter(log_group_name: str):
 
 
 def lambda_handler(event: dict, context=None):
-    if (
-        axiom_cloudwatch_forwarder_lambda_arn is None
-        or axiom_cloudwatch_forwarder_lambda_arn == ""
-    ):
-        responseData = {
-            "success": False,
-            "body": "AXIOM_CLOUDWATCH_LAMBDA_FORWARDER_ARN is not set",
-        }
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
-        return
-
-    forwarder_lambda_group_name = (
-        "/aws/lambda/" + axiom_cloudwatch_forwarder_lambda_arn.split(":")[-1]
-    )
+    log_group_names = event["ResourceProperties"]["CloudWatchLogGroupNames"]
+    log_group_prefix = event["ResourceProperties"]["CloudWatchLogGroupPrefix"]
+    log_group_pattern = event["ResourceProperties"]["CloudWatchLogGroupPattern"]
 
     log_group_names_list = (
         log_group_names.split(",") if log_group_names is not None else []
@@ -113,10 +96,6 @@ def lambda_handler(event: dict, context=None):
 
     responseData = {}
     for group in log_groups:
-        # skip the Forwarder lambda log group to avoid circular logging
-        if group["name"] == forwarder_lambda_group_name:
-            continue
-
         report["matched_log_groups"].append(group["name"])
         report["errors"][group["name"]] = []
 
