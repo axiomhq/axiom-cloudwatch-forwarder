@@ -14,10 +14,10 @@ Axiom CloudWatch Forwarder includes templates for the following CloudFormation s
 1. Create an Axiom organization at [app.axiom.co](https://app.axiom.co?ref=axiom-cloudwatch-forwarder).
 2. Create a dataset in Axiom.
 3. Create an API token in Axiom with permissions to ingest data to the dataset you created.
-4. [Click this link](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-forwarder&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-v1.0.0-cloudformation-stack.yaml) to open the _Forwarder_ stack template.
+4. [Click this link](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-forwarder&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-forwarder-v1.1.0-cloudformation-stack.yaml) to open the _Forwarder_ stack template.
 5. Copy the _Forwarder_ Lambda ARN from the previous step, as it will be referenced in the _Subscriber_ stack.
-6. [Click this link](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber-v1.0.0-cloudformation-stack.yaml) to open the _Subscriber_ stack template.
-7. [Click this link](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-listener&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-listener-v1.0.0-cloudformation-stack.yaml) to open the _Listener_ stack template.
+6. [Click this link](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-subscriber-v1.1.0-cloudformation-stack.yaml) to open the _Subscriber_ stack template.
+7. [Click this link](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-listener&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-listener-v1.1.0-cloudformation-stack.yaml) to open the _Listener_ stack template.
 
 For guidance on unsubscribing from log groups, please see [Removing subscription filters](#Removing-subscription-filters) section below.
 
@@ -60,6 +60,6 @@ The optional _Listener_ stack does the following:
 
 If later on you want to remove subscription filters for one or more log groups:
 
-- [Click this link](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-unsubscriber-v1.0.0-cloudformation-stack.yaml) to open the _Unsubscriber_ stack template.
+- [Click this link](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=axiom-cloudwatch-subscriber&templateURL=https://axiom-cloudformation.s3.amazonaws.com/stacks/axiom-cloudwatch-unsubscriber-v1.1.0-cloudformation-stack.yaml) to open the _Unsubscriber_ stack template.
 
 The log group filtering works the same way as the _Subscriber_ stack. You can filter the log groups by a combination of names, prefix and regular expression.
