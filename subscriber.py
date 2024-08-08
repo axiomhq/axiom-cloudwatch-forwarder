@@ -59,7 +59,7 @@ def get_log_groups(nextToken=None):
     # 2. AWS API https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DescribeLogGroups.html#API_DescribeLogGroups_RequestSyntax
     resp = cloudwatch_logs_client.describe_log_groups(limit=log_groups_return_limit)
     all_groups = resp["logGroups"]
-    nextToken = resp["nextToken"]
+    nextToken = resp["nextToken"] if "nextToken" in resp else None
     # continue fetching log groups until nextToken is None
     while nextToken is not None:
         resp = cloudwatch_logs_client.describe_log_groups(
