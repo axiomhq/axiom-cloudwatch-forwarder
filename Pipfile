@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 boto3 = "*"
+urllib3 = "*"
 
 [dev-packages]
 black = "*"
