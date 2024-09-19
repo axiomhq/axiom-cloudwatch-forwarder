@@ -1,6 +1,6 @@
 data "archive_file" "forwarder" {
   type        = "zip"
-  source_file = "${path.module}/../src/forwarder.py"
+  source_dir = "${path.module}/code"
   output_path = "forwarder.zip"
 }
 
@@ -11,7 +11,7 @@ resource "aws_lambda_function" "forwarder" {
     log_format = "JSON"
     log_group  = aws_cloudwatch_log_group.forwarder.name
   }
-  handler = "forwarder.handler"
+  handler = "forwarder.lambda_handler"
   runtime = "python3.9"
   role    = aws_iam_role.forwarder.arn
 
@@ -19,7 +19,14 @@ resource "aws_lambda_function" "forwarder" {
     variables = {
       AXIOM_TOKEN   = var.axiom_token
       AXIOM_DATASET = var.axiom_dataset
+      AXIOM_URL     = var.axiom_url
     }
+  }
+
+  tags = {
+    PartOf   = var.prefix
+    Platform = "Axiom"
+    Component = "axiom-cloudwatch-forwarder"
   }
 }
 
@@ -37,11 +44,22 @@ resource "aws_iam_role" "forwarder" {
       },
     ]
   })
+
+  tags = {
+    PartOf   = var.prefix
+    Platform = "Axiom"
+    Component = "axiom-cloudwatch-forwarder"
+  }
 }
 
 resource "aws_cloudwatch_log_group" "forwarder" {
   name              = format("/aws/axiom/%s-forwarder", var.prefix)
   retention_in_days = 1
+  tags = {
+    PartOf   = var.prefix
+    Platform = "Axiom"
+    Component = "axiom-cloudwatch-forwarder"
+  }
 }
 
 
@@ -51,13 +69,4 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
   function_name = aws_lambda_function.forwarder.function_name
   principal     = "logs.amazonaws.com"
   source_arn    = format("arn:aws:logs:%s:%s:log-group:*:*", data.aws_region.current.name, data.aws_caller_identity.current.account_id)
-}
-
-
-resource "aws_cloudwatch_log_subscription_filter" "forwarder" {
-  for_each        = { for index, name in var.log_group_names : index => name }
-  name            = format("%s-forwarder-%s", var.prefix, element(split("/", each.value), length(split("/", each.value)) - 1))
-  log_group_name  = each.value
-  filter_pattern  = ""
-  destination_arn = aws_lambda_function.forwarder.arn
 }
