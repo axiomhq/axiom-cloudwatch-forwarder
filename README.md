@@ -1,8 +1,7 @@
 # Axiom CloudWatch Forwarder [![CI](https://github.com/axiomhq/axiom-cloudwatch-forwarder/actions/workflows/ci.yaml/badge.svg)](https://github.com/axiomhq/axiom-cloudwatch-forwarder/actions/workflows/ci.yaml)
 
-Axiom CloudWatch Forwarder is a set of easy-to-use tools designed to forward logs from Amazon CloudWatch to [Axiom](https://axiom.co). It mainly includes a Lambda function to handle the forwarding.
+Axiom CloudWatch Forwarder is a set of easy-to-use AWS CloudFormation stacks designed to forward logs from Amazon CloudWatch to [Axiom](https://axiom.co). It includes a Lambda function to handle the forwarding and stacks to create CloudWatch log group subscription filters for both existing and future log groups.
 
-There are two ways to set up the CloudWatch log forwarding:
+## Documentation
 
-- [A Terraform module](./module) that sets up the forwarding infrastructure and deploys the Lambda function.
-- [Cloudformation Stacks](./cloudformation-stacks) that sets up the forwarding infrastructure and deploys the Lambda function, along with a Subscriber and Listener stacks.
+For more information about how to set up and use the Axiom CloudWatch Forwarder, see the [Axiom documentation](https://axiom.co/docs/send-data/cloudwatch).
