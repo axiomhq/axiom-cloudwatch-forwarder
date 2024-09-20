@@ -5,6 +5,23 @@ data "archive_file" "subscriber" {
   output_path = "subscriber.zip"
 }
 
+data "aws_iam_policy_document" "subscriber" {
+  statement {
+    actions = [
+      "logs:DescribeSubscriptionFilters",
+      "logs:DeleteSubscriptionFilter",
+      "logs:PutSubscriptionFilter",
+      "logs:DescribeLogGroups",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "lambda:AddPermission",
+      "lambda:RemovePermission",
+    ]
+
+    resources = ["*"]
+  }
+}
+
 resource "aws_lambda_function" "subscriber" {
   filename      = "subscriber.zip"
   function_name = format("%s-subscriber", var.prefix)

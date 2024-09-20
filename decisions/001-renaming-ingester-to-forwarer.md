@@ -3,8 +3,7 @@
 
 ## Context
 
-The `Ingester` is used to ship/forward the logs from CloudWatch to Axiom.
-Ingesting is not the correct wording for the process and we wanted to come up
+The `Ingester` is used to ship/forward the logs from CloudWatch to Axiom. Ingesting is not the correct wording for the process and we wanted to come up
 with another name that better explains the process.
 
 
