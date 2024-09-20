@@ -4,14 +4,19 @@ resource "axiom_dataset" "lambda_forwarder" {
 }
 
 module "forwarder" {
-  source            = "../../module"
-  axiom_dataset     = axiom_dataset.lambda_forwarder.name
-  axiom_token       = ""
-  prefix            = "axiom-cloudwatch-tf-test"
-  log_groups_prefix = "/aws/lambda/"
+  source        = "../../module/forwarder"
+  axiom_dataset = axiom_dataset.lambda_forwarder.name
+  axiom_token   = ""
+  prefix        = "axiom-cloudwatch-tf-test"
 }
 
+module "subscriber" {
+  source               = "../../module/subscriber"
+  prefix               = "axiom-cloudwatch-tf-test"
+  forwarder_lambda_arn = module.forwarder.lambda_arn
+  log_groups_prefix    = "/aws/lambda/"
+}
 
 output "log_group_names" {
-  value = module.forwarder.log_groups_prefix
+  value = module.subscriber.log_groups_prefix
 }

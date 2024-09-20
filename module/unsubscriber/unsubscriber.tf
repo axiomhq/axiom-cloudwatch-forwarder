@@ -1,7 +1,7 @@
 
 data "archive_file" "unsubscriber" {
   type        = "zip"
-  source_dir  = "${path.module}/../code"
+  source_dir  = "${path.module}/../../src"
   output_path = "unsubscriber.zip"
 }
 
@@ -37,7 +37,7 @@ resource "aws_lambda_function" "unsubscriber" {
 
   environment {
     variables = {
-      "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN" = aws_lambda_function.forwarder.arn
+      "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN" = var.forwarder_lambda_arn
     }
   }
 

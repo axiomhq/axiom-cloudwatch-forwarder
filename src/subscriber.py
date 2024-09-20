@@ -1,103 +1,50 @@
 import re
-import boto3
 import os
+import json
 import logging
-import cfnresponse
 from typing import Optional
+from helpers import (
+    send_response,
+    build_groups_list,
+    get_log_groups,
+    create_subscription_filter,
+    cloudwatch_logs_client,
+)
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
 
-
-cloudwatch_logs_client = boto3.client("logs")
-lambda_client = boto3.client("lambda")
-
 axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
     "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN"
 )
 
-log_groups_return_limit = 50
-
-
-def build_groups_list(
-    all_groups: list,
-    names: Optional[list] = None,
-    pattern: Optional[str] = None,
-    prefix: Optional[str] = None,
-):
-    # ensure filter params have correct values
-    if not names:
-        names = None
-    if not pattern:
-        pattern = None
-    if not prefix:
-        prefix = None
-    # filter out the log groups based on the names, pattern, and prefix provided in the environment variables
-    groups = []
-    for g in all_groups:
-        group = {"name": g["logGroupName"].strip(), "arn": g["arn"]}
-        if names is None and pattern is None and prefix is None:
-            groups.append(group)
-            continue
-        elif names is not None and group["name"] in names:
-            groups.append(group)
-            continue
-        elif prefix is not None and group["name"].startswith(prefix):
-            groups.append(group)
-            continue
-        elif pattern is not None and re.match(pattern, group["name"]):
-            groups.append(group)
-
-    return groups
-
-
-def get_log_groups(nextToken=None):
-    # check docs:
-    # 1. boto3 https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
-    # 2. AWS API https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DescribeLogGroups.html#API_DescribeLogGroups_RequestSyntax
-    resp = cloudwatch_logs_client.describe_log_groups(limit=log_groups_return_limit)
-    all_groups = resp["logGroups"]
-    nextToken = resp["nextToken"] if "nextToken" in resp else None
-    # continue fetching log groups until nextToken is None
-    while nextToken is not None:
-        resp = cloudwatch_logs_client.describe_log_groups(
-            limit=log_groups_return_limit, nextToken=nextToken
-        )
-        all_groups.extend(resp["logGroups"])
-        nextToken = resp["nextToken"] if "nextToken" in resp else None
-
-    return all_groups
-
-
-def create_subscription_filter(log_group_arn: str, lambda_arn: str):
-    log_group_name = log_group_arn.split(":")[-2]
-    logger.info(f"Creating subscription filter for {log_group_name}")
-
-    filter_name = "%s-axiom" % log_group_name
-
-    cloudwatch_logs_client.put_subscription_filter(
-        logGroupName=log_group_name,
-        filterName=filter_name,
-        filterPattern="",
-        destinationArn=lambda_arn,
-        distribution="ByLogStream",
-    )
-    logger.info(f"{log_group_name} subscription filter has been created successfully.")
-
 
 def lambda_handler(event: dict, context=None):
-    # handle deletion of the stack
+    # handle Cloudformation deletion of the stack
     if event["RequestType"] == "Delete":
-        cfnresponse.send(
-            event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
-        )
+        send_response(event, context, "SUCCESS", {})
         return
 
-    log_group_names = event["ResourceProperties"]["CloudWatchLogGroupNames"]
-    log_group_prefix = event["ResourceProperties"]["CloudWatchLogGroupPrefix"]
-    log_group_pattern = event["ResourceProperties"]["CloudWatchLogGroupPattern"]
+    # detect if the lambda is being invoked by a Cloudformation custom resource
+    is_cloudformation = False
+    if "ResourceProperties" in event:
+        is_Cloudformation = True
+
+    # extract the log group names, prefix and pattern from the event
+    log_group_names = ""
+    log_group_prefix = ""
+    log_group_pattern = ""
+
+    if is_cloudformation:
+        log_group_names = event["ResourceProperties"]["CloudWatchLogGroupNames"]
+        log_group_prefix = event["ResourceProperties"]["CloudWatchLogGroupPrefix"]
+        log_group_pattern = event["ResourceProperties"]["CloudWatchLogGroupPattern"]
+    else:
+        log_group_names = event["CloudWatchLogGroupNames"]
+        log_group_prefix = event["CloudWatchLogGroupPrefix"]
+        log_group_pattern = event["CloudWatchLogGroupPattern"]
 
     if (
         axiom_cloudwatch_forwarder_lambda_arn is None
@@ -161,4 +108,4 @@ def lambda_handler(event: dict, context=None):
     )
     logger.info(report)
     responseData = {"success": True}
-    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+    send_response(event, context, "SUCCESS", responseData)

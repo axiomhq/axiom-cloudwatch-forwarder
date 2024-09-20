@@ -1,23 +1,12 @@
-variable "axiom_dataset" {
-  type        = string
-  description = "Axiom dataset to forward logs to"
-}
-
-variable "axiom_token" {
-  type        = string
-  description = "Axiom token for the dataset"
-}
-
-variable "axiom_url" {
-  type        = string
-  description = "Axiom's API URL"
-  default = "https://api.axiom.co"
-}
-
 variable "prefix" {
   type        = string
   default     = "axiom-cloudwatch"
   description = "prefix for resources, defaults to axiom-cloudwatch"
+}
+
+variable "forwarder_lambda_arn" {
+  type        = string
+  description = "The ARN of the Lambda function that forwards logs to Axiom"
 }
 
 // Which log groups to subscribe to?

@@ -3,17 +3,14 @@ import os
 import base64
 import gzip
 import json
-import boto3
 import logging
 import urllib.request
-import cfnresponse
+from helpers import send_response, get_log_groups, cloudwatch_logs_client
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
-
-cloudwatch_logs_client = boto3.client("logs")
 
 # Standard out from Lambdas.
 std_matcher = re.compile(r"\d\d\d\d-\d\d-\d\d\S+\s+(?P<requestID>\S+)")
@@ -84,7 +81,7 @@ def push_events_to_axiom(events: list):
 
     result = urllib.request.urlopen(req)
     if result.status != 200:
-        raise f"Unexpected status {result.status}"
+        raise Exception(f"Unexpected status {result.status}")
     else:
         logger.info(f"Successfully pushed {len(events)} events to axiom")
 
@@ -145,24 +142,8 @@ def split_log_group(log_group: str):
     }
 
 
-def get_log_groups(nextToken=None):
-    # check docs:
-    # 1. boto3 https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
-    # 2. AWS API https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DescribeLogGroups.html#API_DescribeLogGroups_RequestSyntax
-    resp = cloudwatch_logs_client.describe_log_groups(limit=50)
-    all_groups = resp["logGroups"]
-    nextToken = resp["nextToken"]
-    # continue fetching log groups until nextToken is None
-    while nextToken is not None:
-        resp = cloudwatch_logs_client.describe_log_groups(limit=50, nextToken=nextToken)
-        all_groups.extend(resp["logGroups"])
-        nextToken = resp["nextToken"] if "nextToken" in resp else None
-
-    return all_groups
-
-
 def lambda_handler(event: dict, context=None):
-    # handle deletion of the stack
+    # handle Cloudformation deletion of the stack
     if "RequestType" in event and event["RequestType"] == "Delete":
         # remove all related subscription filters, unforutunately deleting the lambda will
         # not clear the subscription filters
@@ -186,9 +167,7 @@ def lambda_handler(event: dict, context=None):
                         logGroupName=group["logGroupName"],
                         filterName=filter["filterName"],
                     )
-        cfnresponse.send(
-            event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
-        )
+        send_response(event, context, "SUCCESS", {})
         return
 
     if axiom_token is None:

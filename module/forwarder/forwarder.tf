@@ -1,6 +1,6 @@
 data "archive_file" "forwarder" {
   type        = "zip"
-  source_dir = "${path.module}/code"
+  source_dir  = "${path.module}/../../src"
   output_path = "forwarder.zip"
 }
 
@@ -24,8 +24,8 @@ resource "aws_lambda_function" "forwarder" {
   }
 
   tags = {
-    PartOf   = var.prefix
-    Platform = "Axiom"
+    PartOf    = var.prefix
+    Platform  = "Axiom"
     Component = "axiom-cloudwatch-forwarder"
   }
 }
@@ -46,8 +46,8 @@ resource "aws_iam_role" "forwarder" {
   })
 
   tags = {
-    PartOf   = var.prefix
-    Platform = "Axiom"
+    PartOf    = var.prefix
+    Platform  = "Axiom"
     Component = "axiom-cloudwatch-forwarder"
   }
 }
@@ -56,8 +56,8 @@ resource "aws_cloudwatch_log_group" "forwarder" {
   name              = format("/aws/axiom/%s-forwarder", var.prefix)
   retention_in_days = 1
   tags = {
-    PartOf   = var.prefix
-    Platform = "Axiom"
+    PartOf    = var.prefix
+    Platform  = "Axiom"
     Component = "axiom-cloudwatch-forwarder"
   }
 }

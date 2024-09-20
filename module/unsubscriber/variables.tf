@@ -4,6 +4,11 @@ variable "prefix" {
   description = "prefix for resources, defaults to axiom-cloudwatch"
 }
 
+variable "forwarder_lambda_arn" {
+  type        = string
+  description = "The ARN of the Lambda function that forwards logs to Axiom"
+}
+
 // Which log groups to unsubscribe from?
 variable "log_groups_names" {
   type        = string

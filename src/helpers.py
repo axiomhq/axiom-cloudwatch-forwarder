@@ -2,7 +2,9 @@ import os
 import json
 import logging
 import boto3
+import http.client
 from typing import Optional
+from urllib.parse import urlparse
 
 
 log_groups_return_limit = 50
@@ -14,14 +16,58 @@ logger.setLevel(level)
 
 cloudwatch_logs_client = boto3.client("logs")
 
+
 def send_response(event, context, response_status, response_data):
-    return json.dumps({
-        "statusCode": response_status,
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "body": response_data
-    })
+    # detect if the function is called from CloudFormation custom resource
+    if "ResponseURL" in event:
+        _send_cloudformation_response(event, context, response_status, response_data)
+        return
+
+    return json.dumps(
+        {
+            "statusCode": response_status,
+            "headers": {"Content-Type": "application/json"},
+            "body": response_data,
+        }
+    )
+
+
+def _send_cloudformation_response(event, context, response_status, response_data):
+    """
+    Send a response to CloudFormation custom resource.
+    """
+    response_body = json.dumps(
+        {
+            "Status": response_status,
+            "Reason": "See the details in CloudWatch Log Stream: "
+            + context.log_stream_name,
+            "PhysicalResourceId": context.log_stream_name or context.aws_request_id,
+            "StackId": event["StackId"],
+            "RequestId": event["RequestId"],
+            "LogicalResourceId": event["LogicalResourceId"],
+            "Data": response_data,
+        }
+    )
+
+    parsed_url = urlparse(event["ResponseURL"])
+    if parsed_url.scheme == "https":
+        conn = http.client.HTTPSConnection(parsed_url.hostname)
+    else:
+        conn = http.client.HTTPConnection(parsed_url.hostname)
+
+    conn.request(
+        "PUT",
+        parsed_url.path + "?" + parsed_url.query,
+        body=response_body,
+        headers={"Content-Type": ""},
+    )
+
+    response = conn.getresponse()
+    if response.status < 200 or response.status >= 300:
+        raise Exception(
+            f"Failed to send response to CloudFormation. HTTP status code: {response.status}"
+        )
+    conn.close()
 
 
 def get_log_groups(nextToken=None):

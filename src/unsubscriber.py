@@ -10,7 +10,6 @@ logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
 
-
 cloudwatch_logs_client = boto3.client("logs")
 lambda_client = boto3.client("lambda")
 

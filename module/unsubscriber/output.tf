@@ -1,9 +1,5 @@
-output "forwarder_lambda" {
-  value = aws_lambda_function.forwarder.arn
-}
-
-output "subscriber_lambda" {
-  value = aws_lambda_function.subscriber.arn
+output "lambda_arn" {
+  value = aws_lambda_function.unsubscriber.arn
 }
 
 output "log_groups_names" {

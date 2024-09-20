@@ -1,7 +1,7 @@
 
 data "archive_file" "subscriber" {
   type        = "zip"
-  source_dir = "${path.module}/code"
+  source_dir  = "${path.module}/code"
   output_path = "subscriber.zip"
 }
 
@@ -36,13 +36,13 @@ resource "aws_lambda_function" "subscriber" {
 
   environment {
     variables = {
-      "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN" = aws_lambda_function.forwarder.arn
+      "AXIOM_CLOUDWATCH_FORWARDER_LAMBDA_ARN" = var.forwarder_lambda_arn
     }
   }
 
   tags = {
-    PartOf   = var.prefix
-    Platform = "Axiom"
+    PartOf    = var.prefix
+    Platform  = "Axiom"
     Component = "axiom-cloudwatch-subscriber"
   }
 }
@@ -64,11 +64,11 @@ resource "aws_iam_role" "subscriber" {
 
   managed_policy_arns = [
     aws_iam_policy.subscriber.arn
-    ]
+  ]
 
   tags = {
-    PartOf   = var.prefix
-    Platform = "Axiom"
+    PartOf    = var.prefix
+    Platform  = "Axiom"
     Component = "axiom-cloudwatch-subscriber"
   }
 }
@@ -78,8 +78,8 @@ resource "aws_iam_policy" "subscriber" {
   path   = "/"
   policy = data.aws_iam_policy_document.subscriber.json
   tags = {
-    PartOf   = var.prefix
-    Platform = "Axiom"
+    PartOf    = var.prefix
+    Platform  = "Axiom"
     Component = "axiom-cloudwatch-subscriber"
   }
 }
@@ -88,8 +88,8 @@ resource "aws_cloudwatch_log_group" "subscriber" {
   name              = format("/aws/axiom/%s-subscriber", var.prefix)
   retention_in_days = 1
   tags = {
-    PartOf   = var.prefix
-    Platform = "Axiom"
+    PartOf    = var.prefix
+    Platform  = "Axiom"
     Component = "axiom-cloudwatch-subscriber"
   }
 }

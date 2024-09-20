@@ -8,5 +8,5 @@ terraform {
 }
 
 provider "axiom" {
-  api_token = "xaat-"
+  api_token = ""
 }
