@@ -2,7 +2,7 @@
 
 Setup required infrastructure and install Axiom Enterprise on AWS using Terraform.
 
-## AXiom CloudWatch Forwarder Terraform Module
+## Axiom CloudWatch Forwarder Terraform Module
 
 
 ## Installation
