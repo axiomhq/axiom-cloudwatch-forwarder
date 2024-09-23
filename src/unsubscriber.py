@@ -4,7 +4,7 @@ import re
 from typing import Optional, TypedDict
 
 import boto3  # type: ignore
-import cfnresponse  # type: ignore
+from . import cfnresponse
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
