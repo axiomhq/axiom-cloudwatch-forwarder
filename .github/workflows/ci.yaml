@@ -10,7 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: psf/black@stable
+      - uses: chartboost/ruff-action@v1
+      - uses: chartboost/ruff-action@v1
+        with:
+          args: "format --check"
   build:
     runs-on: ubuntu-latest
     needs:
