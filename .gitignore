@@ -1,4 +1,5 @@
 /build
+.envrc
 
 ### Terraform
 # Local .terraform directories
