@@ -98,11 +98,9 @@ resource "aws_cloudwatch_log_group" "unsubscriber" {
 resource "aws_lambda_invocation" "unsubscriber" {
   function_name = aws_lambda_function.unsubscriber.function_name
   input = jsonencode({
-    ResourceProperties = {
-      CloudWatchLogGroupNames   = var.log_groups_names
-      CloudWatchLogGroupPrefix  = var.log_groups_prefix
-      CloudWatchLogGroupPattern = var.log_groups_pattern
-    }
+    CloudWatchLogGroupNames   = var.log_groups_names
+    CloudWatchLogGroupPrefix  = var.log_groups_prefix
+    CloudWatchLogGroupPattern = var.log_groups_pattern
   })
   lifecycle_scope = "CRUD"
 }

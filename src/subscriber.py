@@ -19,30 +19,67 @@ axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
 )
 
 
+def is_delete_event(invoke_source: str, event: dict) -> bool:
+    if invoke_source == "cloudformation" and event["RequestType"] == "Delete":
+        return True
+    elif invoke_source == "terraform" and event["tf"]["action"] == "delete":
+        return True
+    else:
+        return False
+
+
+def get_log_group_config(invoke_source: str, event: dict):
+    Config = TypedDict(
+        "Config",
+        {
+            "log_group_names": str,
+            "log_group_prefix": str,
+            "log_group_pattern": str,
+        },
+    )
+    config: Config = {
+        "log_group_names": "",
+        "log_group_prefix": "",
+        "log_group_pattern": "",
+    }
+    if invoke_source == "cloudformation":
+        config["log_group_names"] = event["ResourceProperties"][
+            "CloudWatchLogGroupNames"
+        ]
+        config["log_group_prefix"] = event["ResourceProperties"][
+            "CloudWatchLogGroupPrefix"
+        ]
+        config["log_group_pattern"] = event["ResourceProperties"][
+            "CloudWatchLogGroupPattern"
+        ]
+    elif invoke_source == "terraform":
+        config["log_group_names"] = event["CloudWatchLogGroupNames"]
+        config["log_group_prefix"] = event["CloudWatchLogGroupPrefix"]
+        config["log_group_pattern"] = event["CloudWatchLogGroupPattern"]
+
+    return config
+
+
 def lambda_handler(event: dict, context):
-    # handle Cloudformation deletion of the stack
-    if event["RequestType"] == "Delete":
+    # detect the source of the invocation
+    invoke_source = None
+    if "tf" in event:
+        invoke_source = "terraform"
+    elif "ResourceProperties" in event:
+        invoke_source = "cloudformation"
+    else:
+        raise Exception("Unknown source of invocation")
+
+    # TODO: Handle delete event
+    if is_delete_event(invoke_source, event):
         send_response(event, context, "SUCCESS", {})
         return
 
-    # detect if the lambda is being invoked by a Cloudformation custom resource
-    is_cloudformation = False
-    if "ResourceProperties" in event:
-        is_cloudformation = True
-
     # extract the log group names, prefix and pattern from the event
-    log_group_names = ""
-    log_group_prefix = ""
-    log_group_pattern = ""
-
-    if is_cloudformation:
-        log_group_names = event["ResourceProperties"]["CloudWatchLogGroupNames"]
-        log_group_prefix = event["ResourceProperties"]["CloudWatchLogGroupPrefix"]
-        log_group_pattern = event["ResourceProperties"]["CloudWatchLogGroupPattern"]
-    else:
-        log_group_names = event["CloudWatchLogGroupNames"]
-        log_group_prefix = event["CloudWatchLogGroupPrefix"]
-        log_group_pattern = event["CloudWatchLogGroupPattern"]
+    config = get_log_group_config(invoke_source, event)
+    log_group_names = config.get("log_group_names")
+    log_group_prefix = config.get("log_group_prefix")
+    log_group_pattern = config.get("log_group_pattern")
 
     if (
         axiom_cloudwatch_forwarder_lambda_arn is None
