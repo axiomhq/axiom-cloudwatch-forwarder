@@ -1,5 +1,5 @@
 # Automatically subscribes the Axiom CloudWatch Forwarder to newly created log groups
-import boto3
+import boto3  # type: ignore
 import os
 import logging
 
