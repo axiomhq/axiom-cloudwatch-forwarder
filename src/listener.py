@@ -1,5 +1,5 @@
 # Automatically subscribes the Axiom CloudWatch Forwarder to newly created log groups
-import boto3
+import boto3  # type: ignore
 import os
 import logging
 
@@ -32,7 +32,7 @@ def lambda_handler(event, context):
 
     :return: None
     """
-    if not "detail" in event:
+    if "detail" not in event:
         return
     # Grab the log group name from incoming event.
     aws_account_id = event["account"]

@@ -3,9 +3,10 @@ import os
 import base64
 import gzip
 import json
+import boto3  # type: ignore
 import logging
 import urllib.request
-from helpers import send_response, get_log_groups, cloudwatch_logs_client
+from .helpers import send_response, get_log_groups, cloudwatch_logs_client
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -46,7 +47,7 @@ data_tags_string = os.getenv("DATA_TAGS")
 data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
 data_tags = {}
-if data_tags_string != "":
+if data_tags_string != "" and data_tags_string is not None:
     data_tags_list = data_tags_string.split(",")
     for tag in data_tags_list:
         tag_splitted = tag.strip(" ").split("=")
@@ -59,7 +60,7 @@ if data_tags_string != "":
 def structured_message(message: str):
     try:
         return json.loads(message)
-    except:
+    except Exception:
         return None
 
 
@@ -102,12 +103,13 @@ def parse_message(message):
     # Determine which matcher to use depending on the message type.
     if message.startswith("REPORT"):
         m = report_matcher.match(message)
-        m = m.groupdict()
-        # convert from string to number
-        m["durationMS"] = float(m["durationMS"])
-        m["billedDurationMS"] = int(m["billedDurationMS"])
-        m["memorySizeMB"] = int(m["memorySizeMB"])
-        m["maxMemoryMB"] = int(m["maxMemoryMB"])
+        if m is not None:
+            m = m.groupdict()
+            # convert from string to number
+            m["durationMS"] = float(m["durationMS"])
+            m["billedDurationMS"] = int(m["billedDurationMS"])
+            m["memorySizeMB"] = int(m["memorySizeMB"])
+            m["maxMemoryMB"] = int(m["maxMemoryMB"])
         return m
     elif message.startswith("END"):
         m = end_matcher.match(message)
@@ -219,12 +221,13 @@ def lambda_handler(event: dict, context=None):
         # Message is not JSON or parsing failed.
         if json_data is None:
             msg = parse_message(message)
-            if len(msg) != 0:
+            if msg is not None and len(msg) != 0:
                 lambda_data = msg
 
         if lambda_data is not None:
-            if "serviceName" in aws_fields:
-                ev.update({aws_fields["serviceName"]: lambda_data})
+            service_name = aws_fields.get("serviceName")
+            if service_name is not None:
+                ev.update({service_name: lambda_data})
 
         events.append(ev)
 

@@ -102,4 +102,5 @@ resource "aws_lambda_invocation" "subscriber" {
     CloudWatchLogGroupPrefix  = var.log_groups_prefix
     CloudWatchLogGroupPattern = var.log_groups_pattern
   })
+  lifecycle_scope = "CRUD"
 }

@@ -1,7 +1,8 @@
 import os
 import json
 import logging
-import boto3
+import boto3  # type: ignore
+import re
 import http.client
 from typing import Optional
 from urllib.parse import urlparse

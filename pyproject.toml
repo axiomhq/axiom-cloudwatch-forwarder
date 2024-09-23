@@ -1,0 +1,17 @@
+[project]
+name = "axiom-cloudwatch-forwarder"
+version = "v1"
+description = "Lambda functions to integrate AWS CloudWatch with Axiom"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "boto3>=1.35.24",
+    "urllib3>=1.26.20",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "mypy>=1.11.2",
+    "pre-commit>=3.8.0",
+    "ruff>=0.6.7",
+]
