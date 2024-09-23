@@ -1,9 +1,7 @@
-import re
 import os
-import json
 import logging
-from typing import Optional
-from helpers import (
+from typing import TypedDict
+from .helpers import (
     send_response,
     build_groups_list,
     get_log_groups,
@@ -21,7 +19,7 @@ axiom_cloudwatch_forwarder_lambda_arn = os.getenv(
 )
 
 
-def lambda_handler(event: dict, context=None):
+def lambda_handler(event: dict, context):
     # handle Cloudformation deletion of the stack
     if event["RequestType"] == "Delete":
         send_response(event, context, "SUCCESS", {})
@@ -30,7 +28,7 @@ def lambda_handler(event: dict, context=None):
     # detect if the lambda is being invoked by a Cloudformation custom resource
     is_cloudformation = False
     if "ResourceProperties" in event:
-        is_Cloudformation = True
+        is_cloudformation = True
 
     # extract the log group names, prefix and pattern from the event
     log_group_names = ""
@@ -52,9 +50,6 @@ def lambda_handler(event: dict, context=None):
     ):
         raise Exception("AXIOM_CLOUDWATCH_LAMBDA_FORWARDER_ARN is not set")
 
-    aws_account_id = context.invoked_function_arn.split(":")[4]
-    region = os.getenv("AWS_REGION")
-
     log_group_names_list = (
         log_group_names.split(",") if log_group_names is not None else []
     )
@@ -65,7 +60,17 @@ def lambda_handler(event: dict, context=None):
     # report number of log groups found
     logger.info(f"Found {len(log_groups)} log groups that matches the criteria.")
 
-    report = {
+    Report = TypedDict(
+        "Report",
+        {
+            "log_groups_count": int,
+            "matched_log_groups": list,
+            "added_groups": list,
+            "added_groups_count": int,
+            "errors": dict,
+        },
+    )
+    report: Report = {
         "log_groups_count": len(log_groups),
         "matched_log_groups": [],
         "added_groups": [],
@@ -76,9 +81,6 @@ def lambda_handler(event: dict, context=None):
         # skip the Forwarder lambda log group to avoid circular logging
         if group["name"].startswith("/aws/axiom/"):
             continue
-
-        # create invoke permission for lambda
-        cleaned_name = "-".join(group["name"].split("/")[3:])
 
         report["matched_log_groups"].append(group["name"])
         report["errors"][group["name"]] = []

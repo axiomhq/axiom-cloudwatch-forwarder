@@ -32,7 +32,7 @@ def lambda_handler(event, context):
 
     :return: None
     """
-    if not "detail" in event:
+    if "detail" not in event:
         return
     # Grab the log group name from incoming event.
     aws_account_id = event["account"]
