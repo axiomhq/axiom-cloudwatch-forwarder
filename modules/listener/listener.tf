@@ -57,6 +57,15 @@ resource "aws_lambda_function" "listener" {
   }
 }
 
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  count         = var.enable_cloudtrail ? 1 : 0
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.listener.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.logs.arn
+}
+
 resource "aws_iam_role" "listener" {
   name = format("%s-listener-role", var.prefix)
   assume_role_policy = jsonencode({
@@ -167,7 +176,6 @@ resource "aws_cloudtrail" "cloudtrail" {
   s3_bucket_name                = aws_s3_bucket.cloudtrail[0].id
   include_global_service_events = false
 }
-
 
 resource "aws_cloudwatch_event_rule" "logs" {
   name        = format("%s-log-groups-auto-subscription-rule", var.prefix)
