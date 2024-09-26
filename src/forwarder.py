@@ -6,7 +6,7 @@ import json
 import boto3  # type: ignore
 import logging
 import urllib.request
-from .helpers import send_response, get_log_groups, cloudwatch_logs_client
+from helpers import send_response, get_log_groups, cloudwatch_logs_client
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)

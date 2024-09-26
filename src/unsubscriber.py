@@ -3,8 +3,8 @@ import os
 import re
 from typing import Optional, TypedDict
 
-import boto3  # type: ignore
-from . import cfnresponse
+import boto3
+from helpers import send_response  # type: ignore
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
@@ -124,4 +124,4 @@ def lambda_handler(event: dict, context=None):
         )
 
     responseData["success"] = "True"
-    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+    send_response(event, context, "SUCCESS", responseData)

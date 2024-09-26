@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import TypedDict
-from .helpers import (
+from helpers import (
     send_response,
     build_groups_list,
     get_log_groups,

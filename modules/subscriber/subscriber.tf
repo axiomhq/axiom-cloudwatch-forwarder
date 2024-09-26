@@ -1,7 +1,7 @@
 
 data "archive_file" "subscriber" {
   type        = "zip"
-  source_dir  = "${path.module}/code"
+  source_dir  = "${path.module}/../../src"
   output_path = "subscriber.zip"
 }
 
