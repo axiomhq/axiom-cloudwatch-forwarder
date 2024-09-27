@@ -6,7 +6,7 @@ env:
   YQ_VERSION: "4.25.1"
 
 jobs:
-  lint:
+  python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,10 +14,15 @@ jobs:
       - uses: chartboost/ruff-action@v1
         with:
           args: "format --check"
-  build:
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forwarder.zip
+          path: src/*
+          retention-days: 1
+  cloudformation:
     runs-on: ubuntu-latest
     needs:
-      - lint
+      - python
     steps:
       - uses: actions/checkout@v3
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
