@@ -29,12 +29,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
+      - run: echo "${{ needs.python.outputs.forwarder }}"
       - run: |-
           mkdir build
-          yq ".Resources.ForwarderLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./src/forwarder.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
-          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./src/subscriber.py)\""  cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
-          yq ".Resources.UnsubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./src/unsubscriber.py)\""  cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
-          yq ".Resources.ListenerLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./src/listener.py)\""  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml
+          yq ".Resources.ForwarderLambda.Properties.Code.ZipFile = \"${{ needs.python.outputs.forwarder }}"  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
+          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"${{ needs.python.outputs.forwarder }}"  cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
+          yq ".Resources.UnsubscriberLambda.Properties.Code.ZipFile = \"${{ needs.python.outputs.forwarder }}"  cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
+          yq ".Resources.ListenerLambda.Properties.Code.ZipFile = \"${{ needs.python.outputs.forwarder }}"  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml
       - run: cat build/*
       - uses: actions/upload-artifact@v4
         with:
