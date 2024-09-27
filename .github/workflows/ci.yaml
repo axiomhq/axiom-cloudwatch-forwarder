@@ -8,13 +8,16 @@ env:
 jobs:
   python:
     runs-on: ubuntu-latest
+    outputs:
+      forwarder: ${{ steps.forwarder-package.outputs.artifact-id }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: chartboost/ruff-action@v1
       - uses: chartboost/ruff-action@v1
         with:
           args: "format --check"
       - uses: actions/upload-artifact@v4
+        id: forwarder-package
         with:
           name: forwarder.zip
           path: src/*
@@ -24,7 +27,7 @@ jobs:
     needs:
       - python
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
       - run: |-
           mkdir build
@@ -43,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Terraform Format
         id: fmt
         run: terraform fmt -recursive -check
