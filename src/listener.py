@@ -15,6 +15,7 @@ logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
 
+
 def lambda_handler(event, context):
     """
     Subscribes Axiom CloudWatch Forwarder to log group from event.
@@ -41,9 +42,7 @@ def lambda_handler(event, context):
     # Check whether the prefix is set - the prefix is used to determine which logs we want.
     # or whether the log group's name starts with the set prefix.
     if not log_group_prefix or log_group_name.startswith(log_group_prefix):
-        create_subscription_filter(
-            log_group_arn, axiom_cloudwatch_forwarder_lambda_arn
-        )
+        create_subscription_filter(log_group_arn, axiom_cloudwatch_forwarder_lambda_arn)
 
     else:
         print(
