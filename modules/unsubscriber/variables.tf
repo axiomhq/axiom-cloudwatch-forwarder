@@ -27,3 +27,9 @@ variable "log_groups_pattern" {
   description = "A regular expression pattern of CloudWatch log groups to unsubscribe from."
   default     = ""
 }
+
+variable "mode" {
+  type        = string
+  default     = "prod"
+  description = "mode for resources, defaults to prod"
+}

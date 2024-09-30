@@ -19,3 +19,9 @@ variable "prefix" {
   default     = "axiom-cloudwatch"
   description = "prefix for resources, defaults to axiom-cloudwatch"
 }
+
+variable "mode" {
+  type        = string
+  default     = "prod"
+  description = "mode for resources, defaults to prod"
+}

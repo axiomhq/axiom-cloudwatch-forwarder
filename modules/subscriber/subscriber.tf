@@ -1,10 +1,3 @@
-
-data "archive_file" "subscriber" {
-  type        = "zip"
-  source_dir  = "${path.module}/../../src"
-  output_path = "subscriber.zip"
-}
-
 data "aws_iam_policy_document" "subscriber" {
   statement {
     actions = [
@@ -23,7 +16,8 @@ data "aws_iam_policy_document" "subscriber" {
 }
 
 resource "aws_lambda_function" "subscriber" {
-  filename      = "subscriber.zip"
+  s3_bucket     = var.mode == "dev" ? "axiom-cloudformation-dev" : "axiom-cloudformation"
+  s3_key        = "axiom-cloudwatch-forwarder/v1.0"
   function_name = format("%s-subscriber", var.prefix)
   logging_config {
     log_format = "JSON"

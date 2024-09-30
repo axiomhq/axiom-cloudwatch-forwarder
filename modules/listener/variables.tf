@@ -20,3 +20,9 @@ variable "enable_cloudtrail" {
   description = "Enable Cloudtrail for CloudWatch CreateLogGroup event notification? If already enabled, choose 'false'"
   default     = false
 }
+
+variable "mode" {
+  type        = string
+  default     = "prod"
+  description = "mode for resources, defaults to prod"
+}

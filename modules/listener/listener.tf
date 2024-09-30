@@ -1,10 +1,3 @@
-
-data "archive_file" "listener" {
-  type        = "zip"
-  source_dir  = "${path.module}/../../src"
-  output_path = "listener.zip"
-}
-
 data "aws_iam_policy_document" "listener" {
   statement {
     actions = [
@@ -31,7 +24,8 @@ data "aws_iam_policy_document" "listener" {
 }
 
 resource "aws_lambda_function" "listener" {
-  filename      = "listener.zip"
+  s3_bucket     = var.mode == "dev" ? "axiom-cloudformation-dev" : "axiom-cloudformation"
+  s3_key        = "axiom-cloudwatch-forwarder/v1.0"
   function_name = format("%s-listener", var.prefix)
   description   = "Axiom CloudWatch Automatic log groups listener lambda"
   logging_config {

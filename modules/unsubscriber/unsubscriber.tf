@@ -1,10 +1,3 @@
-
-data "archive_file" "unsubscriber" {
-  type        = "zip"
-  source_dir  = "${path.module}/../../src"
-  output_path = "unsubscriber.zip"
-}
-
 data "aws_iam_policy_document" "unsubscriber" {
   statement {
     actions = [
@@ -24,7 +17,8 @@ data "aws_iam_policy_document" "unsubscriber" {
 }
 
 resource "aws_lambda_function" "unsubscriber" {
-  filename      = "unsubscriber.zip"
+  s3_bucket     = var.mode == "dev" ? "axiom-cloudformation-dev" : "axiom-cloudformation"
+  s3_key        = "axiom-cloudwatch-forwarder/v1.0"
   function_name = format("%s-unsubscriber", var.prefix)
   logging_config {
     log_format = "JSON"

@@ -138,7 +138,7 @@ Resources:
       Runtime: python3.9
       Handler: index.lambda_handler
       Code:
-        S3Bucket: "" # CI will replace these comments with the code from src/forwarder.py
+        S3Bucket: "# CI will replace these comments with the code from src/listener.py"
         S3Key: ""
       Role: !GetAtt
         - ListenerRole

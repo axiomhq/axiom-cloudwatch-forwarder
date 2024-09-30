@@ -1,11 +1,6 @@
-data "archive_file" "forwarder" {
-  type        = "zip"
-  source_dir  = "${path.module}/../../src"
-  output_path = "forwarder.zip"
-}
-
 resource "aws_lambda_function" "forwarder" {
-  filename      = "forwarder.zip"
+  s3_bucket     = var.mode == "dev" ? "axiom-cloudformation-dev" : "axiom-cloudformation"
+  s3_key        = "axiom-cloudwatch-forwarder/v1.0"
   function_name = format("%s-forwarder", var.prefix)
   logging_config {
     log_format = "JSON"
