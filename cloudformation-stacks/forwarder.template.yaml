@@ -70,9 +70,8 @@ Resources:
       Runtime: python3.9
       Handler: index.lambda_handler
       Code:
-        ZipFile: |
-          # DO NOT EDIT
-          # CI will replace these comments with the code from ./forwarder.py
+        S3Bucket: "" # CI will replace these comments with the code from src/forwarder.py
+        S3Key: ""
       Role: !GetAtt
         - ForwarderRole
         - Arn

@@ -78,9 +78,8 @@ Resources:
       Handler: index.lambda_handler
       Timeout: 300
       Code:
-        ZipFile: |
-          # DO NOT EDIT
-          # CI will replace these comments with the code from ./unsubscriber.py
+        S3Bucket: "" # CI will replace these comments with the code from src/forwarder.py
+        S3Key: ""
       Role: !GetAtt
         - UnsubscriberRole
         - Arn

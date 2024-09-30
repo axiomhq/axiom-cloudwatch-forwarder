@@ -2,6 +2,10 @@ name: CI
 
 on: [push]
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   YQ_VERSION: "4.25.1"
 
@@ -9,7 +13,9 @@ jobs:
   python:
     runs-on: ubuntu-latest
     outputs:
-      forwarder: ${{ steps.forwarder-package.outputs.artifact-url }}
+      url: ${{ steps.forwarder-package.outputs.url }}
+      bucket: ${{ steps.forwarder-package.outputs.bucket }}
+      key: ${{ steps.forwarder-package.outputs.key }}
     steps:
       - uses: actions/checkout@v4
       - uses: chartboost/ruff-action@v1
@@ -17,11 +23,24 @@ jobs:
         with:
           args: "format --check"
       - uses: actions/upload-artifact@v4
-        id: forwarder-package
         with:
           name: forwarder.zip
           path: src/*
           retention-days: 1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-1
+          role-to-assume: "arn:aws:iam::887822303684:role/axiom_forwarder_github_actions20240222164306574100000002"
+          role-session-name: release_to_dev
+      - name: Release to Dev
+        run: aws s3 sync --acl public-read ./src/ s3://axiom-cloudformation-dev/axiom-cloudwatch-forwarder/v1.0
+      - name: Set output
+        id: forwarder-package
+        run: |
+          echo "url=s3://axiom-cloudformation-dev/axiom-cloudwatch-forwarder/v1.0" >> "$GITHUB_OUTPUT"
+          echo "bucket=axiom-cloudformation-dev" >> "$GITHUB_OUTPUT"
+          echo "key=axiom-cloudwatch-forwarder/v1.0" >> "$GITHUB_OUTPUT"
   cloudformation:
     runs-on: ubuntu-latest
     needs:
@@ -29,13 +48,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
-      - run: echo "${{ needs.python.outputs.forwarder }}"
-      - run: |-
-          mkdir build
-          yq ".Resources.ForwarderLambda.Properties.Code.ZipFile = "${{ needs.python.outputs.forwarder }}"  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
-          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = "${{ needs.python.outputs.forwarder }}"  cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
-          yq ".Resources.UnsubscriberLambda.Properties.Code.ZipFile = "${{ needs.python.outputs.forwarder }}"  cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
-          yq ".Resources.ListenerLambda.Properties.Code.ZipFile = "${{ needs.python.outputs.forwarder }}"  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml
+      - run: echo "${{ needs.python.outputs.bucket }}"
+      - run: echo "${{ needs.python.outputs.url }}"
+      - run: mkdir build
+      - run:
+          yq '.Resources.ForwarderLambda.Properties.Code.S3Bucket = "${{ needs.python.outputs.bucket }}" |
+          .Resources.ForwarderLambda.Properties.Code.S3Key = "${{ needs.python.outputs.key }}"' cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.SubscriberLambda.Properties.Code.S3Bucket = "${{ needs.python.outputs.bucket }}" |
+          .Resources.SubscriberLambda.Properties.Code.S3Key = "${{ needs.python.outputs.key }}"' cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.UnsubscriberLambda.Properties.Code.S3Bucket = "${{ needs.python.outputs.bucket }}" |
+          .Resources.UnsubscriberLambda.Properties.Code.S3Key = "${{ needs.python.outputs.key }}"' cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.ListenerLambda.Properties.Code.S3Bucket = "${{ needs.python.outputs.bucket }}" |
+          .Resources.ListenerLambda.Properties.Code.S3Key = "${{ needs.python.outputs.key }}"'  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml
       - run: cat build/*
       - uses: actions/upload-artifact@v4
         with:
