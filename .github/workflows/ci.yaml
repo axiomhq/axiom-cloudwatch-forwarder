@@ -27,20 +27,23 @@ jobs:
           name: forwarder.zip
           path: src/*
           retention-days: 1
+      - run: ls
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
           role-to-assume: "arn:aws:iam::887822303684:role/axiom_forwarder_github_actions20240222164306574100000002"
           role-session-name: release_to_dev
+      - run: cd src && zip forwarder.zip *.py
+      - run: ls
       - name: Release to Dev
-        run: aws s3 sync --acl public-read ./src/ s3://axiom-cloudformation-dev/axiom-cloudwatch-forwarder/v1.0
+        run: aws s3 cp --acl public-read ./src/forwarder.zip s3://axiom-cloudformation-dev/axiom-cloudwatch-forwarder/v1.0/
       - name: Set output
         id: forwarder-package
         run: |
           echo "url=s3://axiom-cloudformation-dev/axiom-cloudwatch-forwarder/v1.0" >> "$GITHUB_OUTPUT"
           echo "bucket=axiom-cloudformation-dev" >> "$GITHUB_OUTPUT"
-          echo "key=axiom-cloudwatch-forwarder/v1.0" >> "$GITHUB_OUTPUT"
+          echo "key=axiom-cloudwatch-forwarder/v1.0/forwarder.zip" >> "$GITHUB_OUTPUT"
   cloudformation:
     runs-on: ubuntu-latest
     needs:
@@ -48,8 +51,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
-      - run: echo "${{ needs.python.outputs.bucket }}"
-      - run: echo "${{ needs.python.outputs.url }}"
       - run: mkdir build
       - run:
           yq '.Resources.ForwarderLambda.Properties.Code.S3Bucket = "${{ needs.python.outputs.bucket }}" |
