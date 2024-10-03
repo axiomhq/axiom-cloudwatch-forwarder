@@ -33,19 +33,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
-      - run: |-
-          mkdir build
-          yq ".Resources.ForwarderLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./src/forwarder.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-${{ github.ref_name }}-cloudformation-stack.yaml
-          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./src/subscriber.py)\"" cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-${{ github.ref_name }}-cloudformation-stack.yaml
-          yq ".Resources.UnsubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./src/unsubscriber.py)\"" cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-${{ github.ref_name }}-cloudformation-stack.yaml
-          yq ".Resources.ListenerLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./src/listener.py)\""  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-${{ github.ref_name }}-cloudformation-stack.yaml
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_IAM_ROLE }}
           role-session-name: release_to_prod
-      - name: Release to Production
+      - name: Release code to Production
+        run: aws s3 sync --acl public-read ./src/ s3://axiom-cloudformation/axiom-cloudwatch-forwarder/v1.0
+      - run: mkdir build
+      - run:
+          yq '.Resources.ForwarderLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
+          .Resources.ForwarderLambda.Properties.Code.S3Key = "${{ needs.python.outputs.key }}"' cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.SubscriberLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
+          .Resources.SubscriberLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/v1.0"' cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.UnsubscriberLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
+          .Resources.UnsubscriberLambda.Properties.Code.S3Key = "axiom-cloudformation"' cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.ListenerLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
+          .Resources.ListenerLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/v1.0"'  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml
+      - name: Release stacks to Production
         env:
           SOURCE_DIR: build
           AWS_S3_BUCKET: "axiom-cloudformation"
