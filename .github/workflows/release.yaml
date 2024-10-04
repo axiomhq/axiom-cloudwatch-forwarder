@@ -42,20 +42,20 @@ jobs:
       - name: Zip code directory
         run: cd src && zip forwarder.zip *.py
       - name: Release code to Production
-        run: aws s3 cp --acl public-read ./src/forwarder.zip s3://axiom-cloudformation/axiom-cloudwatch-forwarder/v1.0/
+        run: aws s3 cp --acl public-read ./src/forwarder.zip s3://axiom-cloudformation/axiom-cloudwatch-forwarder/${{ github.ref_name }}/
       - run: mkdir build
       - run:
           yq '.Resources.ForwarderLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
-          .Resources.ForwarderLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/v1.0/forwarder.zip"' cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
+          .Resources.ForwarderLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/${{ github.ref_name }}/forwarder.zip"' cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-${{ github.ref_name }}-cloudformation-stack.yaml
       - run:
           yq '.Resources.SubscriberLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
-          .Resources.SubscriberLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/v1.0/forwarder.zip"' cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
+          .Resources.SubscriberLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/${{ github.ref_name }}/forwarder.zip"' cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-${{ github.ref_name }}-cloudformation-stack.yaml
       - run:
           yq '.Resources.UnsubscriberLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
-          .Resources.UnsubscriberLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/v1.0/forwarder.zip"' cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
+          .Resources.UnsubscriberLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/${{ github.ref_name }}/forwarder.zip"' cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-${{ github.ref_name }}-cloudformation-stack.yaml
       - run:
           yq '.Resources.ListenerLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
-          .Resources.ListenerLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/v1.0/forwarder.zip"'  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml
+          .Resources.ListenerLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/${{ github.ref_name }}/forwarder.zip"'  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-${{ github.ref_name }}-cloudformation-stack.yaml
       - name: Release stacks to Production
         env:
           SOURCE_DIR: build

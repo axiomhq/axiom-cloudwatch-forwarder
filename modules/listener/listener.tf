@@ -25,7 +25,7 @@ data "aws_iam_policy_document" "listener" {
 
 resource "aws_lambda_function" "listener" {
   s3_bucket     = var.mode == "dev" ? "axiom-cloudformation-dev" : "axiom-cloudformation"
-  s3_key        = "axiom-cloudwatch-forwarder/v1.0/forwarder.zip"
+  s3_key        = "axiom-cloudwatch-forwarder/v1.2.0/forwarder.zip"
   function_name = format("%s-listener", var.prefix)
   description   = "Axiom CloudWatch Automatic log groups listener lambda"
   logging_config {
