@@ -27,7 +27,6 @@ jobs:
           name: forwarder.zip
           path: src/*
           retention-days: 1
-      - run: ls
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -35,7 +34,6 @@ jobs:
           role-to-assume: "arn:aws:iam::887822303684:role/axiom_forwarder_github_actions20240222164306574100000002"
           role-session-name: release_to_dev
       - run: cd src && zip forwarder.zip *.py
-      - run: ls
       - name: Release to Dev
         run: aws s3 cp --acl public-read ./src/forwarder.zip s3://axiom-cloudformation-dev/axiom-cloudwatch-forwarder/v1.0/
       - name: Set output
