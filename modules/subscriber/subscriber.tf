@@ -1,23 +1,6 @@
-data "aws_iam_policy_document" "subscriber" {
-  statement {
-    actions = [
-      "logs:DescribeSubscriptionFilters",
-      "logs:DeleteSubscriptionFilter",
-      "logs:PutSubscriptionFilter",
-      "logs:DescribeLogGroups",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "lambda:AddPermission",
-      "lambda:RemovePermission",
-    ]
-
-    resources = ["*"]
-  }
-}
-
 resource "aws_lambda_function" "subscriber" {
-  s3_bucket     = var.forwarder_bucket
-  s3_key        = "axiom-cloudwatch-forwarder/v${var.forwarder_version}/forwarder.zip"
+  s3_bucket     = var.lambda_zip_bucket
+  s3_key        = "axiom-cloudwatch-forwarder/v${var.lambda_zip_version}/forwarder.zip"
   function_name = "${var.prefix}-subscriber"
   logging_config {
     log_format = "JSON"
@@ -56,10 +39,6 @@ resource "aws_iam_role" "subscriber" {
     ]
   })
 
-  managed_policy_arns = [
-    aws_iam_policy.subscriber.arn
-  ]
-
   tags = {
     PartOf    = var.prefix
     Platform  = "Axiom"
@@ -67,15 +46,27 @@ resource "aws_iam_role" "subscriber" {
   }
 }
 
-resource "aws_iam_policy" "subscriber" {
-  name   = "${var.prefix}-subscriber-lambda-policy"
-  path   = "/"
-  policy = data.aws_iam_policy_document.subscriber.json
-  tags = {
-    PartOf    = var.prefix
-    Platform  = "Axiom"
-    Component = "axiom-cloudwatch-subscriber"
+data "aws_iam_policy_document" "subscriber" {
+  statement {
+    actions = [
+      "logs:DescribeSubscriptionFilters",
+      "logs:DeleteSubscriptionFilter",
+      "logs:PutSubscriptionFilter",
+      "logs:DescribeLogGroups",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "lambda:AddPermission",
+      "lambda:RemovePermission",
+    ]
+
+    resources = ["*"]
   }
+}
+
+resource "aws_iam_role_policy" "subscriber" {
+  name   = "default"
+  role   = aws_iam_role.subscriber.id
+  policy = data.aws_iam_policy_document.subscriber.json
 }
 
 resource "aws_cloudwatch_log_group" "subscriber" {
@@ -87,7 +78,6 @@ resource "aws_cloudwatch_log_group" "subscriber" {
     Component = "axiom-cloudwatch-subscriber"
   }
 }
-
 
 resource "aws_lambda_invocation" "subscriber" {
   function_name = aws_lambda_function.subscriber.function_name

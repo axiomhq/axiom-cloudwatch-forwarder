@@ -1,6 +1,6 @@
 resource "aws_lambda_function" "forwarder" {
-  s3_bucket     = var.forwarder_bucket
-  s3_key        = "axiom-cloudwatch-forwarder/v${var.forwarder_version}/forwarder.zip"
+  s3_bucket     = var.lambda_zip_bucket
+  s3_key        = "axiom-cloudwatch-forwarder/v${var.lambda_zip_version}/forwarder.zip"
   function_name = "${var.prefix}-forwarder"
   logging_config {
     log_format = "JSON"
@@ -56,7 +56,6 @@ resource "aws_cloudwatch_log_group" "forwarder" {
     Component = "axiom-cloudwatch-forwarder"
   }
 }
-
 
 resource "aws_lambda_permission" "allow_cloudwatch" {
   statement_id  = "AllowExecutionFromCloudWatch"
