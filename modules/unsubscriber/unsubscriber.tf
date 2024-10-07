@@ -1,21 +1,3 @@
-data "aws_iam_policy_document" "unsubscriber" {
-  statement {
-    actions = [
-      "logs:DescribeSubscriptionFilters",
-      "logs:DeleteSubscriptionFilter",
-      "logs:PutSubscriptionFilter",
-      "logs:DescribeLogGroups",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "lambda:AddPermission",
-      "lambda:RemovePermission",
-    ]
-
-    resources = ["*"]
-  }
-
-}
-
 resource "aws_lambda_function" "unsubscriber" {
   s3_bucket     = var.lambda_zip_bucket
   s3_key        = "axiom-cloudwatch-forwarder/v${var.lambda_zip_version}/forwarder.zip"
@@ -68,15 +50,27 @@ resource "aws_iam_role" "unsubscriber" {
   }
 }
 
-resource "aws_iam_policy" "unsubscriber" {
-  name   = "${var.prefix}-unsubscriber-lambda-policy"
-  path   = "/"
-  policy = data.aws_iam_policy_document.unsubscriber.json
-  tags = {
-    PartOf    = var.prefix
-    Platform  = "Axiom"
-    Component = "axiom-cloudwatch-unsubscriber"
+data "aws_iam_policy_document" "unsubscriber" {
+  statement {
+    actions = [
+      "logs:DescribeSubscriptionFilters",
+      "logs:DeleteSubscriptionFilter",
+      "logs:PutSubscriptionFilter",
+      "logs:DescribeLogGroups",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "lambda:AddPermission",
+      "lambda:RemovePermission",
+    ]
+
+    resources = ["*"]
   }
+}
+
+resource "aws_iam_role_policy" "unsubscriber" {
+  name   = "default"
+  role   = aws_iam_role.unsubscriber.id
+  policy = data.aws_iam_policy_document.unsubscriber.json
 }
 
 resource "aws_cloudwatch_log_group" "unsubscriber" {

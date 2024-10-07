@@ -1,28 +1,3 @@
-data "aws_iam_policy_document" "listener" {
-  statement {
-    actions = [
-      "logs:DescribeSubscriptionFilters",
-      "logs:DeleteSubscriptionFilter",
-      "logs:PutSubscriptionFilter",
-      "logs:DescribeLogGroups",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents",
-      "lambda:AddPermission",
-      "lambda:RemovePermission",
-      "lambda:InvokeFunction",
-      "lambda:GetFunction",
-      "logs:DescribeLogStreams",
-      "logs:DescribeSubscriptionFilters",
-      "logs:FilterLogEvents",
-      "logs:GetLogEvents",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
-
-    resources = ["*"]
-  }
-}
-
 resource "aws_lambda_function" "listener" {
   s3_bucket     = var.lambda_zip_bucket
   s3_key        = "axiom-cloudwatch-forwarder/v${var.lambda_zip_version}/forwarder.zip"
@@ -85,15 +60,34 @@ resource "aws_iam_role" "listener" {
   }
 }
 
-resource "aws_iam_policy" "listener" {
-  name   = "${var.prefix}-listener-lambda-policy"
-  path   = "/"
-  policy = data.aws_iam_policy_document.listener.json
-  tags = {
-    PartOf    = var.prefix
-    Platform  = "Axiom"
-    Component = "axiom-cloudwatch-listener"
+data "aws_iam_policy_document" "listener" {
+  statement {
+    actions = [
+      "logs:DescribeSubscriptionFilters",
+      "logs:DeleteSubscriptionFilter",
+      "logs:PutSubscriptionFilter",
+      "logs:DescribeLogGroups",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "lambda:AddPermission",
+      "lambda:RemovePermission",
+      "lambda:InvokeFunction",
+      "lambda:GetFunction",
+      "logs:DescribeLogStreams",
+      "logs:DescribeSubscriptionFilters",
+      "logs:FilterLogEvents",
+      "logs:GetLogEvents",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+
+    resources = ["*"]
   }
+}
+resource "aws_iam_role_policy" "listener" {
+  name   = "default"
+  role   = aws_iam_role.listener.id
+  policy = data.aws_iam_policy_document.listener.json
 }
 
 resource "aws_cloudwatch_log_group" "listener" {

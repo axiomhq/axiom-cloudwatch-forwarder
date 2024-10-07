@@ -57,7 +57,6 @@ resource "aws_cloudwatch_log_group" "forwarder" {
   }
 }
 
-
 resource "aws_lambda_permission" "allow_cloudwatch" {
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
