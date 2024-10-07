@@ -52,7 +52,6 @@ resource "aws_lambda_function" "listener" {
 }
 
 resource "aws_lambda_permission" "allow_cloudwatch" {
-  count         = var.enable_cloudtrail ? 1 : 0
   statement_id  = "AllowExecutionFromEventBridge"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.listener.function_name
@@ -165,7 +164,6 @@ resource "aws_s3_bucket" "cloudtrail" {
 resource "aws_cloudtrail" "cloudtrail" {
   count                         = var.enable_cloudtrail ? 1 : 0
   name                          = format("%s-cloudtrail", var.prefix)
-  depends_on                    = [aws_s3_bucket.cloudtrail]
   enable_log_file_validation    = false
   s3_bucket_name                = aws_s3_bucket.cloudtrail[0].id
   include_global_service_events = false
