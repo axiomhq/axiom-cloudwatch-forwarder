@@ -21,10 +21,10 @@ variable "enable_cloudtrail" {
   default     = false
 }
 
-variable "mode" {
+variable "forwarder_bucket" {
   type        = string
-  default     = "prod"
-  description = "mode for resources, defaults to prod"
+  default     = "axiom-cloudformation"
+  description = "name of the S3 bucket where Forwarder Lambda code is stored"
 }
 
 variable "forwarder_version" {
