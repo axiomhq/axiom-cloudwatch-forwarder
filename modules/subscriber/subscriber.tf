@@ -39,10 +39,6 @@ resource "aws_iam_role" "subscriber" {
     ]
   })
 
-  managed_policy_arns = [
-    aws_iam_policy.subscriber.arn
-  ]
-
   tags = {
     PartOf    = var.prefix
     Platform  = "Axiom"
