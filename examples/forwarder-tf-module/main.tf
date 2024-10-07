@@ -1,6 +1,6 @@
 resource "axiom_dataset" "lambda_forwarder" {
   name        = "cloudwatch-lambda"
-  description = "[islam] test"
+  description = "Test"
 }
 
 module "forwarder" {
