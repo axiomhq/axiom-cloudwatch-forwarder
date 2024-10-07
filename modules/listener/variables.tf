@@ -26,3 +26,9 @@ variable "mode" {
   default     = "prod"
   description = "mode for resources, defaults to prod"
 }
+
+variable "forwarder_version" {
+  type        = string
+  default     = "1.2.0"
+  description = "Version of the Axiom CloudWatch Forwarder Lambda"
+}

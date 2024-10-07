@@ -1,6 +1,6 @@
 resource "aws_lambda_function" "forwarder" {
   s3_bucket     = var.mode == "dev" ? "axiom-cloudformation-dev" : "axiom-cloudformation"
-  s3_key        = "axiom-cloudwatch-forwarder/v1.2.0/forwarder.zip"
+  s3_key        = "axiom-cloudwatch-forwarder/v${var.forwarder_version}/forwarder.zip"
   function_name = format("%s-forwarder", var.prefix)
   logging_config {
     log_format = "JSON"
