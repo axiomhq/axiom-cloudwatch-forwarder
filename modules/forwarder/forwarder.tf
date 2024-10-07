@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "forwarder" {
   s3_bucket     = var.forwarder_bucket
   s3_key        = "axiom-cloudwatch-forwarder/v${var.forwarder_version}/forwarder.zip"
-  function_name = format("%s-forwarder", var.prefix)
+  function_name = "${var.prefix}-forwarder"
   logging_config {
     log_format = "JSON"
     log_group  = aws_cloudwatch_log_group.forwarder.name
@@ -26,7 +26,7 @@ resource "aws_lambda_function" "forwarder" {
 }
 
 resource "aws_iam_role" "forwarder" {
-  name = format("%s-forwarder-role", var.prefix)
+  name = "${var.prefix}-forwarder-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -48,7 +48,7 @@ resource "aws_iam_role" "forwarder" {
 }
 
 resource "aws_cloudwatch_log_group" "forwarder" {
-  name              = format("/aws/axiom/%s-forwarder", var.prefix)
+  name              = "/aws/axiom/${var.prefix}-forwarder"
   retention_in_days = 1
   tags = {
     PartOf    = var.prefix

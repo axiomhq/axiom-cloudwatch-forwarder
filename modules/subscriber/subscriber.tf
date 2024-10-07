@@ -18,7 +18,7 @@ data "aws_iam_policy_document" "subscriber" {
 resource "aws_lambda_function" "subscriber" {
   s3_bucket     = var.forwarder_bucket
   s3_key        = "axiom-cloudwatch-forwarder/v${var.forwarder_version}/forwarder.zip"
-  function_name = format("%s-subscriber", var.prefix)
+  function_name = "${var.prefix}-subscriber"
   logging_config {
     log_format = "JSON"
     log_group  = aws_cloudwatch_log_group.subscriber.name
@@ -42,7 +42,7 @@ resource "aws_lambda_function" "subscriber" {
 }
 
 resource "aws_iam_role" "subscriber" {
-  name = format("%s-subscriber-role", var.prefix)
+  name = "${var.prefix}-subscriber-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -68,7 +68,7 @@ resource "aws_iam_role" "subscriber" {
 }
 
 resource "aws_iam_policy" "subscriber" {
-  name   = format("%s-subscriber-lambda-policy", var.prefix)
+  name   = "${var.prefix}-subscriber-lambda-policy"
   path   = "/"
   policy = data.aws_iam_policy_document.subscriber.json
   tags = {
@@ -79,7 +79,7 @@ resource "aws_iam_policy" "subscriber" {
 }
 
 resource "aws_cloudwatch_log_group" "subscriber" {
-  name              = format("/aws/axiom/%s-subscriber", var.prefix)
+  name              = "/aws/axiom/${var.prefix}-subscriber"
   retention_in_days = 1
   tags = {
     PartOf    = var.prefix

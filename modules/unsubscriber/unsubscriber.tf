@@ -19,7 +19,7 @@ data "aws_iam_policy_document" "unsubscriber" {
 resource "aws_lambda_function" "unsubscriber" {
   s3_bucket     = var.forwarder_bucket
   s3_key        = "axiom-cloudwatch-forwarder/v${var.forwarder_version}/forwarder.zip"
-  function_name = format("%s-unsubscriber", var.prefix)
+  function_name = "${var.prefix}-unsubscriber"
   logging_config {
     log_format = "JSON"
     log_group  = aws_cloudwatch_log_group.unsubscriber.name
@@ -43,7 +43,7 @@ resource "aws_lambda_function" "unsubscriber" {
 }
 
 resource "aws_iam_role" "unsubscriber" {
-  name = format("%s-unsubscriber-role", var.prefix)
+  name = "${var.prefix}-unsubscriber-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -69,7 +69,7 @@ resource "aws_iam_role" "unsubscriber" {
 }
 
 resource "aws_iam_policy" "unsubscriber" {
-  name   = format("%s-unsubscriber-lambda-policy", var.prefix)
+  name   = "${var.prefix}-unsubscriber-lambda-policy"
   path   = "/"
   policy = data.aws_iam_policy_document.unsubscriber.json
   tags = {
@@ -80,7 +80,7 @@ resource "aws_iam_policy" "unsubscriber" {
 }
 
 resource "aws_cloudwatch_log_group" "unsubscriber" {
-  name              = format("/aws/axiom/%s-unsubscriber", var.prefix)
+  name              = "/aws/axiom/${var.prefix}-unsubscriber"
   retention_in_days = 1
   tags = {
     PartOf    = var.prefix
