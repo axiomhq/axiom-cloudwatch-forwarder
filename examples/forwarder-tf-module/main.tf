@@ -22,7 +22,6 @@ module "listener" {
   prefix               = "axiom-cloudwatch-tf-test"
   forwarder_lambda_arn = module.forwarder.lambda_arn
   log_groups_prefix    = "/aws/lambda/"
-  enable_cloudtrail    = false
 }
 
 output "log_group_names" {
