@@ -17,8 +17,8 @@ data "aws_iam_policy_document" "unsubscriber" {
 }
 
 resource "aws_lambda_function" "unsubscriber" {
-  s3_bucket     = var.forwarder_bucket
-  s3_key        = "axiom-cloudwatch-forwarder/v${var.forwarder_version}/forwarder.zip"
+  s3_bucket     = var.lambda_zip_bucket
+  s3_key        = "axiom-cloudwatch-forwarder/v${var.lambda_zip_version}/forwarder.zip"
   function_name = "${var.prefix}-unsubscriber"
   logging_config {
     log_format = "JSON"

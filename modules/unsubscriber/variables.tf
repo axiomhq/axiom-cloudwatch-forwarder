@@ -12,30 +12,30 @@ variable "forwarder_lambda_arn" {
 // Which log groups to unsubscribe from?
 variable "log_groups_names" {
   type        = string
-  description = "A comma separated list of CloudWatch log groups to unsubscribe from."
+  description = "A comma separated list of CloudWatch log groups to unsubscribe from"
   default     = ""
 }
 
 variable "log_groups_prefix" {
   type        = string
-  description = "The Prefix of CloudWatch log groups to unsubscribe from."
+  description = "The Prefix of CloudWatch log groups to unsubscribe from"
   default     = ""
 }
 
 variable "log_groups_pattern" {
   type        = string
-  description = "A regular expression pattern of CloudWatch log groups to unsubscribe from."
+  description = "A regular expression pattern of CloudWatch log groups to unsubscribe from"
   default     = ""
 }
 
-variable "forwarder_bucket" {
+variable "lambda_zip_bucket" {
   type        = string
   default     = "axiom-cloudformation"
-  description = "name of the S3 bucket where Forwarder Lambda code is stored"
+  description = "Name of the S3 bucket where Lambda code is stored"
 }
 
-variable "forwarder_version" {
+variable "lambda_zip_version" {
   type        = string
   default     = "1.2.0"
-  description = "Version of the Axiom CloudWatch Forwarder Lambda"
+  description = "Version of the Axiom Lambda"
 }

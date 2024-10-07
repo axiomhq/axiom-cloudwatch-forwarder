@@ -20,14 +20,14 @@ variable "prefix" {
   description = "prefix for resources, defaults to axiom-cloudwatch"
 }
 
-variable "forwarder_bucket" {
+variable "lambda_zip_bucket" {
   type        = string
   default     = "axiom-cloudformation"
-  description = "name of the S3 bucket where Forwarder Lambda code is stored"
+  description = "Name of the S3 bucket where Lambda code is stored"
 }
 
-variable "forwarder_version" {
+variable "lambda_zip_version" {
   type        = string
   default     = "1.2.0"
-  description = "Version of the Axiom CloudWatch Forwarder Lambda"
+  description = "Version of the Axiom Lambda"
 }
