@@ -19,9 +19,9 @@ jobs:
       key: ${{ steps.forwarder-package.outputs.key }}
     steps:
       - uses: actions/checkout@v4
-      - uses: chartboost/ruff-action@v1
-      - uses: chartboost/ruff-action@v1
+      - uses: astral-sh/ruff-action@v1
         with:
+          src: "./src"
           args: "format --check"
       - uses: actions/upload-artifact@v4
         with:
