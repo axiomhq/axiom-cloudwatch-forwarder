@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "listener" {
 resource "aws_lambda_function" "listener" {
   s3_bucket     = var.forwarder_bucket
   s3_key        = "axiom-cloudwatch-forwarder/v${var.forwarder_version}/forwarder.zip"
-  function_name = format("%s-listener", var.prefix)
+  function_name = "${var.prefix}-listener"
   description   = "Axiom CloudWatch Automatic log groups listener lambda"
   logging_config {
     log_format = "JSON"
@@ -52,7 +52,7 @@ resource "aws_lambda_function" "listener" {
 }
 
 resource "aws_lambda_permission" "allow_cloudwatch" {
-  statement_id  = "AllowExecutionFromEventBridge"
+  statement_id  = "AllowExecutionFromEventBridge-${var.prefix}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.listener.function_name
   principal     = "events.amazonaws.com"
@@ -60,7 +60,7 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
 }
 
 resource "aws_iam_role" "listener" {
-  name = format("%s-listener-role", var.prefix)
+  name = "${var.prefix}-listener-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -86,7 +86,7 @@ resource "aws_iam_role" "listener" {
 }
 
 resource "aws_iam_policy" "listener" {
-  name   = format("%s-listener-lambda-policy", var.prefix)
+  name   = "${var.prefix}-listener-lambda-policy"
   path   = "/"
   policy = data.aws_iam_policy_document.listener.json
   tags = {
@@ -97,7 +97,7 @@ resource "aws_iam_policy" "listener" {
 }
 
 resource "aws_cloudwatch_log_group" "listener" {
-  name              = format("/aws/axiom/%s-listener", var.prefix)
+  name              = "/aws/axiom/${var.prefix}-listener"
   retention_in_days = 1
   tags = {
     PartOf    = var.prefix
@@ -106,71 +106,8 @@ resource "aws_cloudwatch_log_group" "listener" {
   }
 }
 
-data "aws_iam_policy_document" "cloudtrail" {
-  count = var.enable_cloudtrail ? 1 : 0
-  statement {
-    sid    = "AWSCloudTrailAclCheck20150319"
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["cloudtrail.amazonaws.com"]
-    }
-    actions   = ["s3:GetBucketAcl"]
-    resources = [aws_s3_bucket.cloudtrail[0].arn]
-  }
-  statement {
-    sid    = "AWSCloudTrailWrite20150319"
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["cloudtrail.amazonaws.com"]
-    }
-    actions = ["s3:PutObject"]
-    resources = [
-      format("%s/AWSLogs/%s/*", aws_s3_bucket.cloudtrail[0].arn, data.aws_caller_identity.current.account_id)
-    ]
-    condition {
-      test     = "StringEquals"
-      variable = "s3:x-amz-acl"
-      values   = ["bucket-owner-full-control"]
-    }
-  }
-}
-
-resource "aws_s3_bucket_policy" "cloudtrail" {
-  count      = var.enable_cloudtrail ? 1 : 0
-  depends_on = [aws_s3_bucket.cloudtrail]
-  bucket     = aws_s3_bucket.cloudtrail[0].id
-  policy     = data.aws_iam_policy_document.cloudtrail[0].json
-}
-
-
-resource "aws_s3_bucket" "cloudtrail" {
-  count = var.enable_cloudtrail ? 1 : 0
-  # aws_s3_bucket_acl    = "BucketOwnerFullControl"
-  bucket = format("%s-cloudtrail", var.prefix)
-
-  tags = {
-    PartOf    = var.prefix
-    Platform  = "Axiom"
-    Component = "axiom-cloudwatch-listener"
-  }
-}
-
-
-// TODO:
-// - Cloudformation has IsLogging: true, but no idea what does it do
-// - Maybe we can make use event_selector to use cost?
-resource "aws_cloudtrail" "cloudtrail" {
-  count                         = var.enable_cloudtrail ? 1 : 0
-  name                          = format("%s-cloudtrail", var.prefix)
-  enable_log_file_validation    = false
-  s3_bucket_name                = aws_s3_bucket.cloudtrail[0].id
-  include_global_service_events = false
-}
-
 resource "aws_cloudwatch_event_rule" "logs" {
-  name        = format("%s-log-groups-auto-subscription-rule", var.prefix)
+  name        = "${var.prefix}-log-groups-auto-subscription-rule"
   description = "Axiom log group auto subscription event rule."
   event_pattern = jsonencode({
     source      = ["aws.logs"]

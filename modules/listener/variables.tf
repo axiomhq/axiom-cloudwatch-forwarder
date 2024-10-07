@@ -15,12 +15,6 @@ variable "log_groups_prefix" {
   default     = ""
 }
 
-variable "enable_cloudtrail" {
-  type        = bool
-  description = "Enable Cloudtrail for CloudWatch CreateLogGroup event notification? If already enabled, choose 'false'"
-  default     = false
-}
-
 variable "forwarder_bucket" {
   type        = string
   default     = "axiom-cloudformation"
