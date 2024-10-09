@@ -26,8 +26,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-1
-          role-to-assume: "arn:aws:iam::887822303684:role/axiom_forwarder_github_actions20240222164306574100000002"
-          role-session-name: release_to_dev
+          role-to-assume: "arn:aws:iam::887822303684:role/axiom-cloudwatch-forwarder-pre-releas-20241009050747493200000001"
+          role-session-name: pre-release
       - run: cd src && zip forwarder.zip *.py
       - name: Release to Dev
         run: aws s3 cp --acl public-read ./src/forwarder.zip s3://axiom-cloudformation-dev/axiom-cloudwatch-forwarder/$LAMBDA_ZIP_VERSION/
@@ -40,7 +40,7 @@ jobs:
   release_cloudformation_stacks:
     runs-on: ubuntu-latest
     needs:
-      - python
+      - release_lambda_zip
     steps:
       - uses: actions/checkout@v4
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq

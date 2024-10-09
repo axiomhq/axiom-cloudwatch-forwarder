@@ -24,7 +24,7 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "latest"
           prerelease: true
-          title: "Development Build"
+          title: "Production Build"
           files: |
             forwarder.zip
   release:
@@ -36,8 +36,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ vars.AWS_REGION }}
-          role-to-assume: ${{ vars.AWS_IAM_ROLE }}
+          aws-region: eu-west-1
+          role-to-assume: arn:aws:iam::694952825951:role/axiom-cloudwatch-forwarder-release-20241007163724313800000001
           role-session-name: release_to_prod
       - name: Zip code directory
         run: cd src && zip forwarder.zip *.py
