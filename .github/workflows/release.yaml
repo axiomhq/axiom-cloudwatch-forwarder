@@ -18,7 +18,7 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
-      - run: zip -r forwarder.zip src
+      - run: cd src && zip forwarder.zip *.py
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -26,7 +26,7 @@ jobs:
           prerelease: true
           title: "Production Build"
           files: |
-            forwarder.zip
+            src/forwarder.zip
   release:
     runs-on: ubuntu-latest
     environment: production
