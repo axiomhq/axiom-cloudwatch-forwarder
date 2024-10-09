@@ -3,17 +3,15 @@ import os
 import base64
 import gzip
 import json
-import boto3
+import boto3  # type: ignore
 import logging
 import urllib.request
-import cfnresponse
+from helpers import send_response, get_log_groups, cloudwatch_logs_client
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
-
-cloudwatch_logs_client = boto3.client("logs")
 
 # Standard out from Lambdas.
 std_matcher = re.compile(r"\d\d\d\d-\d\d-\d\d\S+\s+(?P<requestID>\S+)")
@@ -49,7 +47,7 @@ data_tags_string = os.getenv("DATA_TAGS")
 data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
 data_tags = {}
-if data_tags_string != "":
+if data_tags_string != "" and data_tags_string is not None:
     data_tags_list = data_tags_string.split(",")
     for tag in data_tags_list:
         tag_splitted = tag.strip(" ").split("=")
@@ -62,7 +60,7 @@ if data_tags_string != "":
 def structured_message(message: str):
     try:
         return json.loads(message)
-    except:
+    except Exception:
         return None
 
 
@@ -84,7 +82,7 @@ def push_events_to_axiom(events: list):
 
     result = urllib.request.urlopen(req)
     if result.status != 200:
-        raise f"Unexpected status {result.status}"
+        raise Exception(f"Unexpected status {result.status}")
     else:
         logger.info(f"Successfully pushed {len(events)} events to axiom")
 
@@ -105,12 +103,13 @@ def parse_message(message):
     # Determine which matcher to use depending on the message type.
     if message.startswith("REPORT"):
         m = report_matcher.match(message)
-        m = m.groupdict()
-        # convert from string to number
-        m["durationMS"] = float(m["durationMS"])
-        m["billedDurationMS"] = int(m["billedDurationMS"])
-        m["memorySizeMB"] = int(m["memorySizeMB"])
-        m["maxMemoryMB"] = int(m["maxMemoryMB"])
+        if m is not None:
+            m = m.groupdict()
+            # convert from string to number
+            m["durationMS"] = float(m["durationMS"])
+            m["billedDurationMS"] = int(m["billedDurationMS"])
+            m["memorySizeMB"] = int(m["memorySizeMB"])
+            m["maxMemoryMB"] = int(m["maxMemoryMB"])
         return m
     elif message.startswith("END"):
         m = end_matcher.match(message)
@@ -145,24 +144,8 @@ def split_log_group(log_group: str):
     }
 
 
-def get_log_groups(nextToken=None):
-    # check docs:
-    # 1. boto3 https://boto3.amazonaws.com/v1/documentation/api/1.9.42/reference/services/logs.html#CloudWatchLogs.Client.describe_log_groups
-    # 2. AWS API https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_DescribeLogGroups.html#API_DescribeLogGroups_RequestSyntax
-    resp = cloudwatch_logs_client.describe_log_groups(limit=50)
-    all_groups = resp["logGroups"]
-    nextToken = resp["nextToken"]
-    # continue fetching log groups until nextToken is None
-    while nextToken is not None:
-        resp = cloudwatch_logs_client.describe_log_groups(limit=50, nextToken=nextToken)
-        all_groups.extend(resp["logGroups"])
-        nextToken = resp["nextToken"] if "nextToken" in resp else None
-
-    return all_groups
-
-
 def lambda_handler(event: dict, context=None):
-    # handle deletion of the stack
+    # handle Cloudformation deletion of the stack
     if "RequestType" in event and event["RequestType"] == "Delete":
         # remove all related subscription filters, unforutunately deleting the lambda will
         # not clear the subscription filters
@@ -186,9 +169,7 @@ def lambda_handler(event: dict, context=None):
                         logGroupName=group["logGroupName"],
                         filterName=filter["filterName"],
                     )
-        cfnresponse.send(
-            event, context, cfnresponse.SUCCESS, {}, event["PhysicalResourceId"]
-        )
+        send_response(event, context, "SUCCESS", {})
         return
 
     if axiom_token is None:
@@ -240,12 +221,13 @@ def lambda_handler(event: dict, context=None):
         # Message is not JSON or parsing failed.
         if json_data is None:
             msg = parse_message(message)
-            if len(msg) != 0:
+            if msg is not None and len(msg) != 0:
                 lambda_data = msg
 
         if lambda_data is not None:
-            if "serviceName" in aws_fields:
-                ev.update({aws_fields["serviceName"]: lambda_data})
+            service_name = aws_fields.get("serviceName")
+            if service_name is not None:
+                ev.update({service_name: lambda_data})
 
         events.append(ev)
 

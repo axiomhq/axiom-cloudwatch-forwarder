@@ -2,31 +2,55 @@ name: CI
 
 on: [push]
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   YQ_VERSION: "4.25.1"
+  LAMBDA_ZIP_VERSION: "v1.2.0"
+  LAMBDA_ZIP_BUCKET: "axiom-cloudformation-dev"
+  LAMBDA_ZIP_KEY: "axiom-cloudwatch-forwarder/$LAMBDA_ZIP_VERSION/forwarder.zip"
 
 jobs:
-  lint:
+  python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: psf/black@stable
-  build:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v1
+        with:
+          src: "./src"
+          args: "format --check"
+  cloudformation:
     runs-on: ubuntu-latest
-    needs:
-      - lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
-      - run: |-
-          mkdir build
-          yq ".Resources.ForwarderLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./forwarder.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-cloudformation-stack.yaml
-          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./subscriber.py)\""  cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-cloudformation-stack.yaml
-          yq ".Resources.UnsubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./unsubscriber.py)\""  cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-cloudformation-stack.yaml
-          yq ".Resources.ListenerLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./listener.py)\""  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-cloudformation-stack.yaml
+      - run: mkdir build
+      - run:
+          yq '.Resources.ForwarderLambda.Properties.Code.S3Bucket = "$LAMBDA_ZIP_BUCKET" |
+          .Resources.ForwarderLambda.Properties.Code.S3Key = "$LAMBDA_ZIP_KEY"' cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-$FORWARDER_VERSION-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.SubscriberLambda.Properties.Code.S3Bucket = "$LAMBDA_ZIP_BUCKET" |
+          .Resources.SubscriberLambda.Properties.Code.S3Key = "$LAMBDA_ZIP_KEY"' cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-$FORWARDER_VERSION-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.UnsubscriberLambda.Properties.Code.S3Bucket = "$LAMBDA_ZIP_BUCKET" |
+          .Resources.UnsubscriberLambda.Properties.Code.S3Key = "$LAMBDA_ZIP_KEY"' cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-$FORWARDER_VERSION-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.ListenerLambda.Properties.Code.S3Bucket = "$LAMBDA_ZIP_BUCKET" |
+          .Resources.ListenerLambda.Properties.Code.S3Key = "$LAMBDA_ZIP_KEY"'  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-$FORWARDER_VERSION-cloudformation-stack.yaml
       - run: cat build/*
       - uses: actions/upload-artifact@v4
         with:
           name: stacks
           path: build/*
           retention-days: 1
+  terraform:
+    name: "terraform fmt"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -recursive -check

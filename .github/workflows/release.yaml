@@ -13,25 +13,50 @@ env:
   YQ_VERSION: "4.25.1"
 
 jobs:
+  release-code:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - run: zip -r forwarder.zip src
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            forwarder.zip
   release:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: wget https://github.com/mikefarah/yq/releases/download/v$YQ_VERSION/yq_linux_amd64.tar.gz -O - | tar xz && mv yq_linux_amd64 /usr/local/bin/yq
-      - run: |-
-          mkdir build
-          yq ".Resources.ForwarderLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./forwarder.py)\""  cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-${{ github.ref_name }}-cloudformation-stack.yaml
-          yq ".Resources.SubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./subscriber.py)\"" cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-${{ github.ref_name }}-cloudformation-stack.yaml
-          yq ".Resources.UnsubscriberLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./unsubscriber.py)\"" cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-${{ github.ref_name }}-cloudformation-stack.yaml
-          yq ".Resources.ListenerLambda.Properties.Code.ZipFile = \"$(sed  's/\"/\\\"/g' ./listener.py)\""  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-${{ github.ref_name }}-cloudformation-stack.yaml
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_IAM_ROLE }}
           role-session-name: release_to_prod
-      - name: Release to Production
+      - name: Zip code directory
+        run: cd src && zip forwarder.zip *.py
+      - name: Release code to Production
+        run: aws s3 cp --acl public-read ./src/forwarder.zip s3://axiom-cloudformation/axiom-cloudwatch-forwarder/${{ github.ref_name }}/
+      - run: mkdir build
+      - run:
+          yq '.Resources.ForwarderLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
+          .Resources.ForwarderLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/${{ github.ref_name }}/forwarder.zip"' cloudformation-stacks/forwarder.template.yaml > build/axiom-cloudwatch-forwarder-${{ github.ref_name }}-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.SubscriberLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
+          .Resources.SubscriberLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/${{ github.ref_name }}/forwarder.zip"' cloudformation-stacks/subscriber.template.yaml > build/axiom-cloudwatch-subscriber-${{ github.ref_name }}-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.UnsubscriberLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
+          .Resources.UnsubscriberLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/${{ github.ref_name }}/forwarder.zip"' cloudformation-stacks/unsubscriber.template.yaml > build/axiom-cloudwatch-unsubscriber-${{ github.ref_name }}-cloudformation-stack.yaml
+      - run:
+          yq '.Resources.ListenerLambda.Properties.Code.S3Bucket = "axiom-cloudformation" |
+          .Resources.ListenerLambda.Properties.Code.S3Key = "axiom-cloudwatch-forwarder/${{ github.ref_name }}/forwarder.zip"'  cloudformation-stacks/listener.template.yaml > build/axiom-cloudwatch-listener-${{ github.ref_name }}-cloudformation-stack.yaml
+      - name: Release stacks to Production
         env:
           SOURCE_DIR: build
           AWS_S3_BUCKET: "axiom-cloudformation"

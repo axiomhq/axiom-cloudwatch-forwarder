@@ -1,15 +1,15 @@
-import re
-from typing import Optional
-import boto3
-import os
 import logging
-import cfnresponse
+import os
+import re
+from typing import Optional, TypedDict
+
+import boto3
+from helpers import send_response  # type: ignore
 
 level = os.getenv("log_level", "INFO")
 logging.basicConfig(level=level)
 logger = logging.getLogger()
 logger.setLevel(level)
-
 
 cloudwatch_logs_client = boto3.client("logs")
 lambda_client = boto3.client("lambda")
@@ -86,7 +86,17 @@ def lambda_handler(event: dict, context=None):
         get_log_groups(), log_group_names_list, log_group_pattern, log_group_prefix
     )
 
-    report = {
+    Report = TypedDict(
+        "Report",
+        {
+            "log_groups_count": int,
+            "matched_log_groups": list,
+            "added_groups": list,
+            "added_groups_count": int,
+            "errors": dict,
+        },
+    )
+    report: Report = {
         "log_groups_count": len(log_groups),
         "matched_log_groups": [],
         "added_groups": [],
@@ -114,4 +124,4 @@ def lambda_handler(event: dict, context=None):
         )
 
     responseData["success"] = "True"
-    cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+    send_response(event, context, "SUCCESS", responseData)
