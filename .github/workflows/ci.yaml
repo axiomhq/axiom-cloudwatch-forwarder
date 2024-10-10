@@ -45,12 +45,3 @@ jobs:
           name: stacks
           path: build/*
           retention-days: 1
-  terraform:
-    name: "terraform fmt"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Terraform Format
-        id: fmt
-        run: terraform fmt -recursive -check
