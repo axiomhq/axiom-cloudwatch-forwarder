@@ -53,7 +53,7 @@ Resources:
             Resource: "*"
       PolicyName: axiom-cloudwatch-listener-policy
       Roles:
-        - !Ref "ListenerLambda"
+        - !Ref "ListenerRole"
   ListenerRole:
     Type: AWS::IAM::Role
     Properties:
