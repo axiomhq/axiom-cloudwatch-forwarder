@@ -6,6 +6,7 @@ import json
 import boto3  # type: ignore
 import logging
 import urllib.request
+from urllib.parse import urlparse
 from helpers import send_response, get_log_groups, cloudwatch_logs_client
 
 level = os.getenv("log_level", "INFO")
@@ -47,25 +48,32 @@ data_tags_string = os.getenv("DATA_TAGS")
 data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
 # Edge-based ingestion configuration
-# Priority: AXIOM_EDGE_URL > AXIOM_EDGE_REGION > AXIOM_URL (legacy)
-axiom_edge_url = os.getenv("AXIOM_EDGE_URL", "").strip("/")
+# Priority: AXIOM_URL (with path detection) > AXIOM_EDGE_REGION > default
 axiom_edge_region = os.getenv("AXIOM_EDGE_REGION", "").strip()
+
+
+def _url_has_path(url: str) -> bool:
+    """Check if URL has a meaningful path (not empty or just '/')."""
+    try:
+        parsed = urlparse(url)
+        return parsed.path not in ("", "/")
+    except Exception:
+        return False
 
 
 def get_ingest_url(dataset: str) -> str:
     """
-    Returns the appropriate ingest URL based on edge configuration.
+    Returns the appropriate ingest URL based on configuration.
 
     Priority:
-    1. AXIOM_EDGE_URL - Explicit edge URL (e.g., https://custom-edge.example.com)
-    2. AXIOM_EDGE_REGION - Regional edge domain (e.g., eu-central-1.aws.edge.axiom.co)
-    3. AXIOM_URL - Legacy behavior (default)
-
-    Edge endpoints use: /v1/ingest/{dataset}
-    Legacy endpoints use: /v1/datasets/{dataset}/ingest
+    1. AXIOM_URL with custom path - Used as-is (e.g., http://localhost:3400/ingest)
+    2. AXIOM_URL without path - Appends /v1/datasets/{dataset}/ingest for backwards compat
+    3. AXIOM_EDGE_REGION - Regional edge domain (e.g., eu-central-1.aws.edge.axiom.co)
+       builds https://{region}/v1/ingest/{dataset}
+    4. Default cloud endpoint with legacy path
     """
-    if axiom_edge_url:
-        return f"{axiom_edge_url}/v1/ingest/{dataset}"
+    if axiom_url and _url_has_path(axiom_url):
+        return axiom_url
     elif axiom_edge_region:
         return f"https://{axiom_edge_region}/v1/ingest/{dataset}"
     else:

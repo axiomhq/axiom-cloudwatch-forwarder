@@ -26,18 +26,27 @@ The forwarder supports edge-based regional ingestion for improved data locality.
 
 | Environment Variable | Description |
 |---------------------|-------------|
-| `AXIOM_EDGE_URL` | Explicit edge URL (e.g., `https://custom-edge.example.com`). Takes precedence over `AXIOM_EDGE_REGION`. |
-| `AXIOM_EDGE_REGION` | Regional edge domain (e.g., `eu-central-1.aws.edge.axiom.co`). |
+| `AXIOM_URL` | The Axiom endpoint URL. If a path is provided (e.g., `http://localhost:3400/ingest`), it is used as-is. If no path is provided, `/v1/datasets/{dataset}/ingest` is appended for backwards compatibility. |
+| `AXIOM_EDGE_REGION` | Regional edge domain (e.g., `eu-central-1.aws.edge.axiom.co`). When set, data is sent to `https://{region}/v1/ingest/{dataset}`. |
 
-**Priority:** `AXIOM_EDGE_URL` > `AXIOM_EDGE_REGION` > `AXIOM_URL` (default)
+**Priority:**
+1. `AXIOM_URL` with custom path → used as-is
+2. `AXIOM_EDGE_REGION` → `https://{region}/v1/ingest/{dataset}`
+3. `AXIOM_URL` without path → `{url}/v1/datasets/{dataset}/ingest` (backwards compatible)
 
-### Edge Endpoint
+### Examples
 
-When edge ingestion is configured, data is sent to:
-```
-https://{edge}/v1/ingest/{dataset}
+```bash
+# Traditional configuration (backwards compatible)
+AXIOM_URL=https://api.axiom.co
+
+# Regional edge ingestion
+AXIOM_EDGE_REGION=eu-central-1.aws.edge.axiom.co
+
+# Custom endpoint with path (used as-is)
+AXIOM_URL=http://localhost:3400/ingest
 ```
 
 ### CloudFormation Parameters
 
-The forwarder stack accepts optional `AxiomEdgeURL` and `AxiomEdgeRegion` parameters for edge configuration. Existing deployments work unchanged—edge routing only activates when explicitly configured.
+The forwarder stack accepts an optional `AxiomEdgeRegion` parameter for edge configuration. Existing deployments work unchanged—edge routing only activates when explicitly configured.
