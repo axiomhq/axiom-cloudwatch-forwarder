@@ -46,6 +46,32 @@ axiom_dataset = os.getenv("AXIOM_DATASET")
 data_tags_string = os.getenv("DATA_TAGS")
 data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
+# Edge-based ingestion configuration
+# Priority: AXIOM_EDGE_URL > AXIOM_EDGE_REGION > AXIOM_URL (legacy)
+axiom_edge_url = os.getenv("AXIOM_EDGE_URL", "").strip("/")
+axiom_edge_region = os.getenv("AXIOM_EDGE_REGION", "").strip()
+
+
+def get_ingest_url(dataset: str) -> str:
+    """
+    Returns the appropriate ingest URL based on edge configuration.
+
+    Priority:
+    1. AXIOM_EDGE_URL - Explicit edge URL (e.g., https://custom-edge.example.com)
+    2. AXIOM_EDGE_REGION - Regional edge domain (e.g., eu-central-1.aws.edge.axiom.co)
+    3. AXIOM_URL - Legacy behavior (default)
+
+    Edge endpoints use: /v1/ingest/{dataset}
+    Legacy endpoints use: /v1/datasets/{dataset}/ingest
+    """
+    if axiom_edge_url:
+        return f"{axiom_edge_url}/v1/ingest/{dataset}"
+    elif axiom_edge_region:
+        return f"https://{axiom_edge_region}/v1/ingest/{dataset}"
+    else:
+        return f"{axiom_url}/v1/datasets/{dataset}/ingest"
+
+
 data_tags = {}
 if data_tags_string != "" and data_tags_string is not None:
     data_tags_list = data_tags_string.split(",")
@@ -68,7 +94,7 @@ def push_events_to_axiom(events: list):
     if len(events) == 0:
         return
 
-    url = f"{axiom_url}/v1/datasets/{axiom_dataset}/ingest"
+    url = get_ingest_url(axiom_dataset)
     data = json.dumps(events)
     req = urllib.request.Request(
         url,

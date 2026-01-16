@@ -11,6 +11,14 @@ Parameters:
     Default: "https://api.axiom.co"
     AllowedPattern: ".+" # required
     Description: The URL of the Axiom endpoint (without a trailing /). Defaults to "https://api.axiom.co".
+  AxiomEdgeURL:
+    Type: String
+    Default: ""
+    Description: Optional. Explicit edge URL for regional ingestion (e.g., https://custom-edge.example.com). Takes precedence over AxiomEdgeRegion.
+  AxiomEdgeRegion:
+    Type: String
+    Default: ""
+    Description: Optional. Regional edge domain for ingestion (e.g., eu-central-1.aws.edge.axiom.co). When set, data is ingested via the edge endpoint.
   AxiomDataset:
     Type: String
     Description: The name of the Axiom dataset to which events will be forwarded.
@@ -89,6 +97,8 @@ Resources:
           AXIOM_TOKEN: !Ref "AxiomToken"
           AXIOM_DATASET: !Ref "AxiomDataset"
           AXIOM_URL: !Ref "AxiomURL"
+          AXIOM_EDGE_URL: !Ref "AxiomEdgeURL"
+          AXIOM_EDGE_REGION: !Ref "AxiomEdgeRegion"
           DATA_TAGS: !Ref DataTags
   ForwarderLambdaPermission:
     Type: AWS::Lambda::Permission
