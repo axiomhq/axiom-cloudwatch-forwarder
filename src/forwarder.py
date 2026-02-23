@@ -48,8 +48,9 @@ data_tags_string = os.getenv("DATA_TAGS")
 data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
 # Edge-based ingestion configuration
-# Priority: AXIOM_URL (with path detection) > AXIOM_EDGE_REGION > default
-axiom_edge_region = os.getenv("AXIOM_EDGE_REGION", "").strip()
+# Priority: AXIOM_EDGE_URL > AXIOM_EDGE > AXIOM_URL (legacy)
+axiom_edge_url = os.getenv("AXIOM_EDGE_URL", "").strip("/")
+axiom_edge = os.getenv("AXIOM_EDGE", "").strip()
 
 
 def _url_has_path(url: str) -> bool:
@@ -63,19 +64,20 @@ def _url_has_path(url: str) -> bool:
 
 def get_ingest_url(dataset: str) -> str:
     """
-    Returns the appropriate ingest URL based on configuration.
+    Returns the appropriate ingest URL based on edge configuration.
 
     Priority:
-    1. AXIOM_URL with custom path - Used as-is (e.g., http://localhost:3400/ingest)
-    2. AXIOM_URL without path - Appends /v1/datasets/{dataset}/ingest for backwards compat
-    3. AXIOM_EDGE_REGION - Regional edge domain (e.g., eu-central-1.aws.edge.axiom.co)
-       builds https://{region}/v1/ingest/{dataset}
-    4. Default cloud endpoint with legacy path
+    1. AXIOM_EDGE_URL with custom path - Used as-is
+    2. AXIOM_EDGE_URL without path - Appends /v1/ingest/{dataset}
+    3. AXIOM_EDGE - Regional edge domain, builds https://{edge}/v1/ingest/{dataset}
+    4. AXIOM_URL - Legacy path /v1/datasets/{dataset}/ingest
     """
-    if axiom_url and _url_has_path(axiom_url):
-        return axiom_url
-    elif axiom_edge_region:
-        return f"https://{axiom_edge_region}/v1/ingest/{dataset}"
+    if axiom_edge_url:
+        if _url_has_path(axiom_edge_url):
+            return axiom_edge_url
+        return f"{axiom_edge_url}/v1/ingest/{dataset}"
+    elif axiom_edge:
+        return f"https://{axiom_edge}/v1/ingest/{dataset}"
     else:
         return f"{axiom_url}/v1/datasets/{dataset}/ingest"
 

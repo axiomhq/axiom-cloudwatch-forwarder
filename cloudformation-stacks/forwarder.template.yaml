@@ -10,11 +10,15 @@ Parameters:
     Type: String
     Default: "https://api.axiom.co"
     AllowedPattern: ".+" # required
-    Description: The URL of the Axiom endpoint. If a path is provided (e.g., http://localhost:3400/ingest), it is used as-is. If no path is provided, /v1/datasets/{dataset}/ingest is appended for backwards compatibility.
-  AxiomEdgeRegion:
+    Description: The URL of the Axiom endpoint (without a trailing /). Defaults to "https://api.axiom.co".
+  AxiomEdgeURL:
     Type: String
     Default: ""
-    Description: Optional. Regional edge domain for ingestion (e.g., eu-central-1.aws.edge.axiom.co). When set, data is sent to https://{region}/v1/ingest/{dataset}. Cannot be used together with a custom path in AxiomURL.
+    Description: Optional. Explicit edge URL for ingest operations (e.g., https://custom-edge.example.com). If a path is provided, the URL is used as-is. If no path is provided, /v1/ingest/{dataset} is appended. Takes precedence over AxiomEdge.
+  AxiomEdge:
+    Type: String
+    Default: ""
+    Description: Optional. Regional edge domain for ingestion (e.g., eu-central-1.aws.edge.axiom.co). When set, data is sent to https://{edge}/v1/ingest/{dataset}.
   AxiomDataset:
     Type: String
     Description: The name of the Axiom dataset to which events will be forwarded.
@@ -93,7 +97,8 @@ Resources:
           AXIOM_TOKEN: !Ref "AxiomToken"
           AXIOM_DATASET: !Ref "AxiomDataset"
           AXIOM_URL: !Ref "AxiomURL"
-          AXIOM_EDGE_REGION: !Ref "AxiomEdgeRegion"
+          AXIOM_EDGE_URL: !Ref "AxiomEdgeURL"
+          AXIOM_EDGE: !Ref "AxiomEdge"
           DATA_TAGS: !Ref DataTags
   ForwarderLambdaPermission:
     Type: AWS::Lambda::Permission
