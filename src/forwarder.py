@@ -6,6 +6,7 @@ import json
 import boto3  # type: ignore
 import logging
 import urllib.request
+from urllib.parse import urlparse
 from helpers import send_response, get_log_groups, cloudwatch_logs_client
 
 level = os.getenv("log_level", "INFO")
@@ -46,6 +47,41 @@ axiom_dataset = os.getenv("AXIOM_DATASET")
 data_tags_string = os.getenv("DATA_TAGS")
 data_service_name = os.getenv("DATA_MESSAGE_KEY")
 
+# Edge-based ingestion configuration
+# Priority: AXIOM_EDGE_URL > AXIOM_EDGE > AXIOM_URL (legacy)
+axiom_edge_url = os.getenv("AXIOM_EDGE_URL", "").strip("/")
+axiom_edge = os.getenv("AXIOM_EDGE", "").strip()
+
+
+def _url_has_path(url: str) -> bool:
+    """Check if URL has a meaningful path (not empty or just '/')."""
+    try:
+        parsed = urlparse(url)
+        return parsed.path not in ("", "/")
+    except Exception:
+        return False
+
+
+def get_ingest_url(dataset: str) -> str:
+    """
+    Returns the appropriate ingest URL based on edge configuration.
+
+    Priority:
+    1. AXIOM_EDGE_URL with custom path - Used as-is
+    2. AXIOM_EDGE_URL without path - Appends /v1/ingest/{dataset}
+    3. AXIOM_EDGE - Regional edge domain, builds https://{edge}/v1/ingest/{dataset}
+    4. AXIOM_URL - Legacy path /v1/datasets/{dataset}/ingest
+    """
+    if axiom_edge_url:
+        if _url_has_path(axiom_edge_url):
+            return axiom_edge_url
+        return f"{axiom_edge_url}/v1/ingest/{dataset}"
+    elif axiom_edge:
+        return f"https://{axiom_edge}/v1/ingest/{dataset}"
+    else:
+        return f"{axiom_url}/v1/datasets/{dataset}/ingest"
+
+
 data_tags = {}
 if data_tags_string != "" and data_tags_string is not None:
     data_tags_list = data_tags_string.split(",")
@@ -68,7 +104,7 @@ def push_events_to_axiom(events: list):
     if len(events) == 0:
         return
 
-    url = f"{axiom_url}/v1/datasets/{axiom_dataset}/ingest"
+    url = get_ingest_url(axiom_dataset)
     data = json.dumps(events)
     req = urllib.request.Request(
         url,
